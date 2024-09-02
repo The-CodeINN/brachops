@@ -22,7 +22,7 @@ const startServer = () => {
       log.info(`Server is running on port ${PORT}`);
     });
   } catch (error) {
-    log.error(`Error starting server: ${(error as Error).message}`);
+    log.error(`Error starting server`);
   }
 };
 
