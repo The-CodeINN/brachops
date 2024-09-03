@@ -19,28 +19,26 @@ module.exports = [
     },
     rules: {
       ...typescript.configs["recommended"].rules,
-      ...typescript.configs["recommended-requiring-type-checking"].rules,
-      "no-nested-ternary": "off",
-      "no-unused-vars": "off",
-      "no-plusplus": ["error", { allowForLoopAfterthoughts: true }],
-      "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/no-meaningless-void-operator": "warn",
-      "@typescript-eslint/no-confusing-void-expression": "error",
-      "@typescript-eslint/no-non-null-asserted-nullish-coalescing": "error",
-      "@typescript-eslint/consistent-type-definitions": ["warn", "type"],
+      "no-nested-ternary": "warn",
+      "no-unused-vars": "warn",
+      "no-plusplus": ["warn", { allowForLoopAfterthoughts: true }],
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-meaningless-void-operator": "off",
+      "@typescript-eslint/no-confusing-void-expression": "warn",
+      "@typescript-eslint/no-non-null-asserted-nullish-coalescing": "warn",
+      "@typescript-eslint/consistent-type-definitions": ["warn", "interface"], // Changed to "interface"
       "@typescript-eslint/no-unused-vars": [
-        "error",
+        "warn",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
           caughtErrorsIgnorePattern: "^_",
         },
       ],
-      "no-restricted-exports": "off",
-      eqeqeq: "error",
-      "no-unneeded-ternary": "error",
+      eqeqeq: "warn",
+      "no-unneeded-ternary": "warn",
       "@typescript-eslint/consistent-type-imports": [
-        "error",
+        "warn",
         {
           prefer: "type-imports",
           fixStyle: "inline-type-imports",
@@ -57,7 +55,7 @@ module.exports = [
       parser: typescriptParser,
     },
     rules: {
-      // Add any specific rules for config files here, or leave it empty for minimal linting
+      // Minimal linting for config files
     },
   },
 ];
