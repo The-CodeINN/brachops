@@ -25,8 +25,23 @@ export const checkJobExistsHandler = async (req: Request, res: Response) => {
 
 export const triggerBuildHandler = async (req: Request, res: Response) => {
   try {
-    const { jobName, imageName } = req.body;
-    const result = await jenkinsService.triggerBuild(jobName, imageName);
+    const { gitUrl, branchName, dockerImage, tag, kubeDeploymentYaml, kubeServiceYaml, prometheusYaml, grafanaYaml, appName } = req.body;
+    const { jobName } = req.params;
+    console.log(req.body);
+    console.log(req.params);
+    if (!jobName || !gitUrl || !dockerImage || !kubeDeploymentYaml || !kubeServiceYaml || !prometheusYaml || !grafanaYaml || !appName) {
+      return res.status(400).json({ error: "Required parameters are missing." });
+    }
+
+    const exists = await jenkinsService.checkJobExists(jobName);
+    if (!exists) {
+      return res.status(404).json({ error: `Job ${jobName} not found.` });
+    }
+    // Trigger the Jenkins build with the provided parameters
+    const result = await jenkinsService.triggerBuild(jobName, {
+      gitUrl, branchName, dockerImage, tag, kubeDeploymentYaml, kubeServiceYaml, prometheusYaml, grafanaYaml, appName
+    });
+
     res.json(result);
   } catch (error) {
     log.error(`Failed to trigger build: ${req.body.jobName}`, error);
