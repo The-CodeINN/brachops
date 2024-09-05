@@ -4,12 +4,15 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import './index.css';
 import { Toaster } from './components/ui/sonner.tsx';
+import { ThemeProvider } from './components/global/theme-provider.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Toaster position='top-center' />
-      <App />
+      <ThemeProvider defaultTheme='dark' storageKey='vite-ui-theme'>
+        <App />
+      </ThemeProvider>
     </BrowserRouter>
   </StrictMode>
 );
