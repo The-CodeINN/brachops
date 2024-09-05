@@ -3,6 +3,7 @@ import { MountainIcon } from '@/assets/icons/mountainIcon';
 import { HeartFilledIcon } from '@radix-ui/react-icons';
 import { SidebarOpen } from 'lucide-react';
 import { ModeToggle } from './mode-toggle';
+import { Link } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,10 +15,10 @@ const Navbar: React.FC = () => {
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='flex items-center justify-between h-16'>
           {/* Logo and title */}
-          <div className='flex-shrink-0 flex items-center'>
+          <Link to='/' className='flex-shrink-0 flex items-center'>
             <MountainIcon className='h-8 w-8' aria-hidden='true' />
             <h1 className='text-2xl font-bold ml-2'>BrachOps</h1>
-          </div>
+          </Link>
 
           {/* Desktop menu - centered */}
           <div className='hidden sm:flex flex-grow justify-center'>
