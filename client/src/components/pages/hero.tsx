@@ -3,6 +3,7 @@ import AnimatedGradientText from '../ui/animated-gradient-text';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 function Hero() {
   return (
@@ -11,7 +12,7 @@ function Hero() {
         id='hero'
         className='relative mx-auto min-h-screen flex justify-center flex-col max-w-7xl px-6 text-center md:px-8'
       >
-        <a href='/'>
+        <Link to='/'>
           <AnimatedGradientText>
             🎉 <hr className='mx-2 h-4 w-[1px] shrink-0 bg-gray-300' />
             <span
@@ -23,7 +24,7 @@ function Hero() {
             </span>
             <ChevronRight className='ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5' />
           </AnimatedGradientText>
-        </a>
+        </Link>
         <h1 className='animate-fade-in -translate-y-4 text-balance bg-gradient-to-br from-black from-30% to-black/40 bg-clip-text py-6 text-5xl font-semibold leading-none tracking-tighter text-transparent opacity-0 [--animation-delay:200ms] sm:text-6xl md:text-7xl lg:text-8xl dark:from-white dark:to-white/40'>
           Effortless Deployment.
           <br className='hidden md:block' /> Unparalleled Scale.
@@ -35,12 +36,12 @@ function Hero() {
           on innovation.
         </p>
         <div className='flex flex-col md:flex-row justify-center w-full'>
-          <a href='/create-deployment'>
+          <Link to='/create-deployment'>
             <Button className='animate-fade-in -translate-y-4 gap-1 text-white opacity-0 ease-in-out [--animation-delay:600ms] dark:text-black'>
               <span>Deploy Now </span>
               <ArrowRightIcon className='ml-1 size-4 transition-transform duration-300 ease-in-out group-hover:translate-x-1' />
             </Button>
-          </a>
+          </Link>
         </div>
       </section>
     </>
