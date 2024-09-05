@@ -1,6 +1,6 @@
 export default {
   port: 3000,
-  jenkinsUserName: "example",
-  jenkinsPassword: "emample",
-  jenkinsUrl: "192.168.40.134:8080",
+  jenkinsUserName: "admin",
+  jenkinsPassword: "c3f68f077bfa47aaa6eb11d936fbf49e",
+  jenkinsUrl: "172.29.63.156:8080",
 };
