@@ -114,43 +114,41 @@ export const getBuildStatusHandler = async (req: Request, res: Response) => {
 };
 
 export const createJenkinsJobHandler = async (req: Request, res: Response) => {
-  console.log(req.body), "req.body";
-
-  const { jobName, imageName } = validators.triggerBuildValidator.parse(req.body);
   try {
-    // check if job already exists
-    const exists = await jenkinsService.checkJobExists(jobName);
-    if (exists) {
-      return res.status(400).json({ error: `Job ${jobName} already exists` });
+    // Validate input
+    const { jobName, imageName } = validators.triggerBuildValidator.parse(req.body);
+
+    // Check if job already exists
+    if (await jenkinsService.checkJobExists(jobName)) {
+      return res.status(409).json({ error: `Job ${jobName} already exists` });
     }
 
-    // Generate the pipeline script
+    // Generate pipeline script and XML configuration
     const pipelineScript = generatePipeline(imageName);
-
-    //console.log(pipelineScript), "pipelineScript";
-
-    // Create the Jenkins job
     const xml = createJenkinsJobXML(pipelineScript);
 
-    console.log(xml), "xml";
+    // Create Jenkins job
+    await jenkinsService.createJenkinsJob(jobName, xml);
 
-    const result = await jenkinsService.createJenkinsJob(jobName, xml);
+    // Trigger the build
+    const buildResult = await jenkinsService.triggerJob(jobName);
 
-    // trigger the build
-    const jobCreated = await jenkinsService.checkJobExists(jobName);
-    if (jobCreated) {
-      const buildResult = await jenkinsService.triggerJob(jobName);
-      console.log(buildResult, "buildResult");
-
-      res.json({ jobCreated, buildResult });
-    }
+    // Return success response
+    res.status(201).json({
+      message: `Job ${jobName} created and triggered successfully`,
+      buildResult,
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       // Handle validation errors from Zod
       res.status(400).json({ error: error.errors });
     } else {
-      log.error(`Failed to create Jenkins job: ${jobName}`, error);
-      res.status(500).json({ error: `Failed to create ${jobName} job` });
+      log.error(
+        `Failed to get build status for job: ${req.params.jobName}, 
+        build: ${req.params.buildNumber}`,
+        error
+      );
+      res.status(500).json({ error: "Failed to get build status" });
     }
   }
 };

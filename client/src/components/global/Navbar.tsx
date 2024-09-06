@@ -23,14 +23,14 @@ const Navbar: React.FC = () => {
           {/* Desktop menu - centered */}
           <div className='hidden sm:flex flex-grow justify-center'>
             <div className='flex items-baseline space-x-4'>
-              <a
-                href='/'
+              <Link
+                to='/'
                 className='text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium'
               >
                 Home
-              </a>
-              <a
-                href='/docs'
+              </Link>
+              <Link
+                to='/docs'
                 className='text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center'
               >
                 <HeartFilledIcon
@@ -38,7 +38,7 @@ const Navbar: React.FC = () => {
                   aria-hidden='true'
                 />
                 Docs
-              </a>
+              </Link>
             </div>
           </div>
 
