@@ -31,6 +31,12 @@ export const triggerBuild = async (jobName: string, parameters: any) => {
   return { queueItem };
 };
 
+
+export const triggerJob = async (jobName: string) => {
+  const queueItem = await jenkins.job.build({ name: jobName });
+  return { queueItem };
+}
+
 export const createJenkinsJob = async (jobName: string, jobConfigXml: string) => {
   await jenkins.job.create(jobName, jobConfigXml);
 };
