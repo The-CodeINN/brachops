@@ -1,4 +1,4 @@
-import express, { type Request, type Response, type Application } from "express";
+import express, { type Application } from "express";
 import config from "config";
 import cors from "cors";
 import helmet from "helmet";

@@ -7,5 +7,5 @@ const jenkinsUrl = config.get<string>("jenkins.jenkinsUrl");
 
 export const jenkins = new Jenkins({
   baseUrl: `http://${userName}:${password}@${jenkinsUrl}`,
-  crumbIssuer: true,
+  crumbIssuer: true, //
 });
