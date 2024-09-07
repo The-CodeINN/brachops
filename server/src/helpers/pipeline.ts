@@ -37,15 +37,6 @@ pipeline {
         }
       }
     }
-    // stage('Build Docker Image') {
-    //   steps {
-    //     script {
-    //       withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-    //         sh "docker build -t \${IMAGE_NAME}"
-    //       }
-    //     }
-    //   }
-    // }
     stage('Run Docker Container') {
       steps {
         withCredentials([
@@ -59,9 +50,15 @@ pipeline {
         ]) {
           script {
             withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-              sh "docker run -d -p 8081:8080 \${IMAGE_NAME}"
+              sh '''
+                docker run -d -p 8081:8080 \\
+                  --network=quizzie_network \\
+                  -e VAULT_ADDR=$VAULT_ADDR \\
+                  -e VAULT_TOKEN=$VAULT_TOKEN \\
+                  ${imageName}
+              '''
               // Keep Jenkins engaged indefinitely
-              sh "tail -f /dev/null"
+              // sh "tail -f /dev/null"
             }
           }
         }
