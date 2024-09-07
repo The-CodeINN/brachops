@@ -4,6 +4,8 @@ import cors from "cors";
 import helmet from "helmet";
 import { log } from "./utils/logger";
 import { routes } from "./routes/routes";
+import { notFoundMiddleware } from "./middlewares/notFoundMiddleware";
+import { errorMiddleware } from "./middlewares/errorMiddleware";
 
 const app: Application = express();
 
@@ -17,6 +19,9 @@ const startServer = () => {
   try {
     // routes
     routes(app);
+
+    app.use(notFoundMiddleware);
+    app.use(errorMiddleware);
 
     app.listen(PORT, () => {
       log.info(`Server is running on port ${PORT}`);

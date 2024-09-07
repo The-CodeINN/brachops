@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -12,11 +12,11 @@ interface Config {
 }
 
 const config: Config = {
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: parseInt(process.env.PORT || "3000", 10),
   jenkins: {
-    jenkinsUrl: process.env.JENKINS_URL || 'http://localhost:8080',
-    jenkinsUserName: process.env.JENKINS_USERNAME || '',
-    jenkinsPassword: process.env.JENKINS_PASSWORD || '',
+    jenkinsUrl: process.env.JENKINS_URL || "http://localhost:8080",
+    jenkinsUserName: process.env.JENKINS_USERNAME || "",
+    jenkinsPassword: process.env.JENKINS_PASSWORD || "",
   },
 };
 
