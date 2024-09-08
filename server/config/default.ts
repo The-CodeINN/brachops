@@ -14,7 +14,7 @@ interface Config {
 const config: Config = {
   port: parseInt(process.env.PORT || "3000", 10),
   jenkins: {
-    jenkinsUrl: process.env.JENKINS_URL || "http://localhost:8080",
+    jenkinsUrl: process.env.JENKINS_URL || "localhost:8080",
     jenkinsUserName: process.env.JENKINS_USERNAME || "",
     jenkinsPassword: process.env.JENKINS_PASSWORD || "",
   },

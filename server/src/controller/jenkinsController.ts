@@ -5,11 +5,24 @@ import * as jenkinsService from "$/service/jenkinsService";
 import { createJenkinsJobXML } from "$/helpers/configXml";
 import { generatePipeline } from "$/helpers/pipeline";
 import { type GetBuildStatusInput, type CheckJobExistsInput, type CreateJobInput } from "$/schema";
+import { createSuccessResponse } from "$/utils/apiResponse";
 
 export const getJenkinsInfoHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const info = await jenkinsService.getJenkinsInfo();
-    res.json(info);
+
+    // Extract relevant information
+    const relevantInfo = {
+      numExecutors: info.numExecutors,
+      jobs: info.jobs.map((job: any) => ({
+        name: job.name,
+        url: job.url,
+        color: job.color,
+      })),
+      url: info.url,
+    };
+
+    res.json(createSuccessResponse(relevantInfo, "Jenkins info retrieved successfully"));
   } catch (error) {
     log.error(error);
     next(error);
@@ -24,7 +37,7 @@ export const checkJobExistsHandler = async (
   try {
     const { jobName } = req.params;
     const exists = await jenkinsService.checkJobExists(jobName);
-    res.json({ exists });
+    res.json(createSuccessResponse({ exists }, `Job existence checked successfully`));
   } catch (error) {
     log.error(error);
     next(error);
@@ -39,7 +52,18 @@ export const getBuildStatusHandler = async (
   try {
     const { jobName, buildNumber } = req.params;
     const status = await jenkinsService.getBuildStatus(jobName, parseInt(buildNumber, 10));
-    res.json(status);
+
+        // Extract relevant information from status
+        const relevantInfo = {
+          fullDisplayName: status.buildInfo.fullDisplayName,
+          number: status.buildInfo.number,
+          result: status.buildInfo.result,
+          url: status.buildInfo.url,
+          duration: status.buildInfo.duration,
+          parameters: status.buildInfo.actions.find((action: any) => action._class === "hudson.model.ParametersAction")?.parameters
+        };
+
+    res.json(createSuccessResponse(relevantInfo, "Build status retrieved successfully"));
   } catch (error) {
     log.error(error);
     next(error);
@@ -72,10 +96,7 @@ export const createJenkinsJobHandler = async (
     const buildResult = await jenkinsService.triggerJob(jobName);
 
     // Return success response
-    res.status(201).json({
-      message: `Job ${jobName} created and triggered successfully`,
-      buildResult,
-    });
+    res.status(201).json(createSuccessResponse({ buildResult }, `Job ${jobName} created and triggered successfully`));
   } catch (error) {
     log.error(error);
     next(error);
