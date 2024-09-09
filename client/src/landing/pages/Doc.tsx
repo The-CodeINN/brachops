@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router-dom";
 
 const NotionPage = () => {
   return (
@@ -8,7 +8,7 @@ const NotionPage = () => {
         <p className="text-gray-300 mb-8">
           Visit the full documentation for more information.
         </p>
-        <Link href="https://www.notion.so/your-notion-url">
+        <Link to="https://www.notion.so/your-notion-url">
           <a
             className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-500 transition-colors"
             target="_blank"
