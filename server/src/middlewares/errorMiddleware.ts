@@ -4,9 +4,10 @@ import { type Request, type Response, type NextFunction } from "express";
 
 export function errorMiddleware(
   err: unknown,
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  // eslint-disable-next-line no-unused-vars
+  _next: NextFunction
 ): void {
   let statusCode = 500;
   let errorResponse: ApiResponse<null>;
