@@ -6,14 +6,35 @@ import { generatePipeline } from "$/helpers/pipeline";
 import { type GetBuildStatusInput, type CheckJobExistsInput, type CreateJobInput } from "$/schema";
 import { createSuccessResponse } from "$/utils/apiResponse";
 
+interface JobInfo {
+  name: string;
+  url: string;
+  color: string;
+}
+
+interface JenkinsInfo {
+  numExecutors: number;
+  jobs: JobInfo[];
+  url: string;
+}
+
+interface BuildInfo {
+  fullDisplayName: string;
+  number: number;
+  result: string;
+  url: string;
+  duration: number;
+  parameters?: any; 
+}
+
 export const getJenkinsInfoHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const info = await jenkinsService.getJenkinsInfo();
+    const info: JenkinsInfo = await jenkinsService.getJenkinsInfo();
 
     // Extract relevant information
     const relevantInfo = {
       numExecutors: info.numExecutors,
-      jobs: info.jobs.map((job: any) => ({
+      jobs: info.jobs.map((job: JobInfo) => ({
         name: job.name,
         url: job.url,
         color: job.color,
@@ -50,17 +71,17 @@ export const getBuildStatusHandler = async (
 ) => {
   try {
     const { jobName, buildNumber } = req.params;
-    const status = await jenkinsService.getBuildStatus(jobName, parseInt(buildNumber, 10));
+    const status: { buildInfo: BuildInfo } = await jenkinsService.getBuildStatus(jobName, parseInt(buildNumber, 10));
 
-        // Extract relevant information from status
-        const relevantInfo = {
-          fullDisplayName: status.buildInfo.fullDisplayName,
-          number: status.buildInfo.number,
-          result: status.buildInfo.result,
-          url: status.buildInfo.url,
-          duration: status.buildInfo.duration,
-          parameters: status.buildInfo.actions.find((action: any) => action._class === "hudson.model.ParametersAction")?.parameters
-        };
+    // Extract relevant information from status
+    const relevantInfo = {
+      fullDisplayName: status.buildInfo.fullDisplayName,
+      number: status.buildInfo.number,
+      result: status.buildInfo.result,
+      url: status.buildInfo.url,
+      duration: status.buildInfo.duration,
+      parameters: status.buildInfo.parameters
+    };
 
     res.json(createSuccessResponse(relevantInfo, "Build status retrieved successfully"));
   } catch (error) {
