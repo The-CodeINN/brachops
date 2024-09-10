@@ -41,4 +41,10 @@ export const routes = (app: Application) => {
     validateResource(streamBuildLogSchema),
     jenkinsLogController.streamBuildLogHandler
   ); // http://localhost:3000/jenkins/job/MyJob/build/1/log/stream or http://localhost:3000/jenkins/job/MyJob/build/1/log/stream?type=text&delay=1000 or http://localhost:3000/jenkins/job/MyJob/build/1/log/stream?type=html&delay=1000
+
+  app.get("/jenkins/job/:jobName/build/:buildNumber/stop", jenkinsController.stopBuildHandler); // http://localhost:3000/jenkins/job/MyJob/build/1/stop
+
+  app.delete("/jenkins/job/:jobName", jenkinsController.deleteJobHandler); // http://localhost:3000/jenkins/job/MyJob
+
+  app.get("/jenkins/jobs", jenkinsController.listJobsHandler); // http://localhost:3000/jenkins/jobs
 };

@@ -122,3 +122,43 @@ export const createJenkinsJobHandler = async (
     next(error);
   }
 };
+
+export const stopBuildHandler = async (
+  req: Request<GetBuildStatusInput["params"]>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { jobName, buildNumber } = req.params;
+    await jenkinsService.stopBuild(jobName, parseInt(buildNumber, 10));
+    res.json(createSuccessResponse({}, `Build ${buildNumber} stopped successfully`));
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+};
+
+export const deleteJobHandler = async (
+  req: Request<CheckJobExistsInput["params"]>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { jobName } = req.params;
+    await jenkinsService.deleteJob(jobName);
+    res.json(createSuccessResponse({}, `Job ${jobName} deleted successfully`));
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+}
+
+export const listJobsHandler = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const jobs = await jenkinsService.listJob();
+    res.json(createSuccessResponse({ jobs }, `Jobs listed successfully`));
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+}

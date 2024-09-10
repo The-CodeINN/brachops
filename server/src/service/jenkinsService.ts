@@ -47,3 +47,18 @@ export const getBuildStatus = async (jobName: string, buildNumber: number) => {
     buildInfo,
   };
 };
+
+// stop build
+export const stopBuild = async (jobName: string, buildNumber: number) => {
+  await jenkins.build.stop(jobName, buildNumber);
+}
+
+// delete job
+export const deleteJob = async (jobName: string) => {
+  await jenkins.job.destroy(jobName);
+}
+
+// list job 
+export const listJob = async () => {
+  return await jenkins.job.list();
+}
