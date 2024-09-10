@@ -3,9 +3,16 @@ import { log } from "$/utils/logger";
 import * as jenkinsService from "$/service/jenkinsService";
 import { createJenkinsJobXML } from "$/helpers/configXml";
 import { generatePipeline } from "$/helpers/pipeline";
-import { type GetBuildStatusInput, type CheckJobExistsInput, type CreateJobInput } from "$/schema";
+import {
+  type GetBuildStatusInput,
+  type CheckJobExistsInput,
+  type CreateJobInput,
+  CreateScanJobInput,
+} from "$/schema";
 import { createSuccessResponse } from "$/utils/apiResponse";
+import { generateGitPipeline } from "$/helpers/gitPipeline";
 
+// Get Jenkins info
 export const getJenkinsInfoHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const info = await jenkinsService.getJenkinsInfo();
@@ -28,6 +35,7 @@ export const getJenkinsInfoHandler = async (req: Request, res: Response, next: N
   }
 };
 
+// Check if a job exists
 export const checkJobExistsHandler = async (
   req: Request<CheckJobExistsInput["params"]>,
   res: Response,
@@ -43,6 +51,7 @@ export const checkJobExistsHandler = async (
   }
 };
 
+// Get the status of a build
 export const getBuildStatusHandler = async (
   req: Request<GetBuildStatusInput["params"]>,
   res: Response,
@@ -71,6 +80,7 @@ export const getBuildStatusHandler = async (
   }
 };
 
+// Create a new Jenkins job and trigger a build
 export const createJenkinsJobHandler = async (
   req: Request<object, object, CreateJobInput["body"]>,
   res: Response,
@@ -78,8 +88,12 @@ export const createJenkinsJobHandler = async (
 ) => {
   try {
     // Validate input
+<<<<<<< Updated upstream
     const { jobName, imageName, projectType } = req.body;
     console.log(req.body);
+=======
+    const { jobName, imageName } = req.body;
+>>>>>>> Stashed changes
 
     // Check if job already exists
     if (await jenkinsService.checkJobExists(jobName)) {
@@ -102,6 +116,73 @@ export const createJenkinsJobHandler = async (
       .json(
         createSuccessResponse({ buildResult }, `Job ${jobName} created and triggered successfully`)
       );
+<<<<<<< Updated upstream
+=======
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+};
+
+// Create a new Jenkins job for code scanning and trigger a build
+export const createScanJobHandler = async (
+  req: Request<object, object, CreateScanJobInput["body"]>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Validate input
+    const { jobName, gitUrl } = req.body;
+    const exists = await jenkinsService.checkJobExists(jobName);
+    if (exists) {
+      return res.status(409).json({ error: `Job ${jobName} already exists` });
+    }
+
+    // Generate pipeline script and XML configuration
+    const pipelineScript = generateGitPipeline(jobName, gitUrl);
+    const xml = createJenkinsJobXML(pipelineScript);
+
+    // Create Jenkins job
+    await jenkinsService.createScanJob(jobName, xml);
+
+    // Trigger the build
+    const buildResult = await jenkinsService.triggerJob(jobName);
+
+    // Return success response
+    res
+      .status(201)
+      .json(
+        createSuccessResponse({ buildResult }, `Job ${jobName} created and triggered successfully`)
+      );
+
+    const buildInfo = await jenkinsService.getBuildStatus(jobName, buildResult.queueItem.number);
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+};
+
+// Trigger a build for an existing job
+export const buildJob = async (
+  req: Request<CheckJobExistsInput["params"]>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Validate input
+    const { jobName } = req.params;
+    const exists = await jenkinsService.checkJobExists(jobName);
+    if (exists) {
+      // Trigger the build
+      const buildResult = await jenkinsService.triggerJob(jobName);
+      // Return success response
+      res
+        .status(201)
+        .json(createSuccessResponse({ buildResult }, `Job ${jobName} triggered successfully`));
+    } else {
+      return res.status(404).json({ error: `Job ${jobName} does not exist` });
+    }
+>>>>>>> Stashed changes
   } catch (error) {
     log.error(error);
     next(error);
