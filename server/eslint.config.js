@@ -56,6 +56,28 @@ module.exports = [
     },
     rules: {
       // Minimal linting for config files
+
+      const express = require("express");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpecs = require("./swaggerConfig");
+
+const app = express();
+
+// Your route handlers here
+
+// Swagger UI route
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+
+// Example of a basic route
+app.get("/api/hello", (req, res) => {
+  res.send("Hello World!");
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
     },
   },
 ];
