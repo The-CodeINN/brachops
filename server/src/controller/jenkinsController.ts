@@ -6,14 +6,35 @@ import { generatePipeline } from "$/helpers/pipeline";
 import { type GetBuildStatusInput, type CheckJobExistsInput, type CreateJobInput } from "$/schema";
 import { createSuccessResponse } from "$/utils/apiResponse";
 
+interface JobInfo {
+  name: string;
+  url: string;
+  color: string;
+}
+
+interface JenkinsInfo {
+  numExecutors: number;
+  jobs: JobInfo[];
+  url: string;
+}
+
+interface BuildInfo {
+  fullDisplayName: string;
+  number: number;
+  result: string;
+  url: string;
+  duration: number;
+  parameters?: any; 
+}
+
 export const getJenkinsInfoHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const info = await jenkinsService.getJenkinsInfo();
+    const info: JenkinsInfo = await jenkinsService.getJenkinsInfo();
 
     // Extract relevant information
     const relevantInfo = {
       numExecutors: info.numExecutors,
-      jobs: info.jobs.map((job: any) => ({
+      jobs: info.jobs.map((job: JobInfo) => ({
         name: job.name,
         url: job.url,
         color: job.color,
@@ -50,7 +71,7 @@ export const getBuildStatusHandler = async (
 ) => {
   try {
     const { jobName, buildNumber } = req.params;
-    const status = await jenkinsService.getBuildStatus(jobName, parseInt(buildNumber, 10));
+    const status: { buildInfo: BuildInfo } = await jenkinsService.getBuildStatus(jobName, parseInt(buildNumber, 10));
 
     // Extract relevant information from status
     const relevantInfo = {
@@ -59,9 +80,7 @@ export const getBuildStatusHandler = async (
       result: status.buildInfo.result,
       url: status.buildInfo.url,
       duration: status.buildInfo.duration,
-      parameters: status.buildInfo.actions.find(
-        (action: any) => action._class === "hudson.model.ParametersAction"
-      )?.parameters,
+      parameters: status.buildInfo.parameters
     };
 
     res.json(createSuccessResponse(relevantInfo, "Build status retrieved successfully"));
@@ -78,7 +97,7 @@ export const createJenkinsJobHandler = async (
 ) => {
   try {
     // Validate input
-    const { jobName, imageName, projectType } = req.body;
+    const { jobName, imageName } = req.body;
     console.log(req.body);
 
     // Check if job already exists
@@ -87,7 +106,7 @@ export const createJenkinsJobHandler = async (
     }
 
     // Generate pipeline script and XML configuration
-    const pipelineScript = generatePipeline(imageName, projectType);
+    const pipelineScript = generatePipeline(imageName);
     const xml = createJenkinsJobXML(pipelineScript);
 
     // Create Jenkins job
@@ -97,13 +116,49 @@ export const createJenkinsJobHandler = async (
     const buildResult = await jenkinsService.triggerJob(jobName);
 
     // Return success response
-    res
-      .status(201)
-      .json(
-        createSuccessResponse({ buildResult }, `Job ${jobName} created and triggered successfully`)
-      );
+    res.status(201).json(createSuccessResponse({ buildResult }, `Job ${jobName} created and triggered successfully`));
   } catch (error) {
     log.error(error);
     next(error);
   }
 };
+
+export const stopBuildHandler = async (
+  req: Request<GetBuildStatusInput["params"]>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { jobName, buildNumber } = req.params;
+    await jenkinsService.stopBuild(jobName, parseInt(buildNumber, 10));
+    res.json(createSuccessResponse({}, `Build ${buildNumber} stopped successfully`));
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+};
+
+export const deleteJobHandler = async (
+  req: Request<CheckJobExistsInput["params"]>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { jobName } = req.params;
+    await jenkinsService.deleteJob(jobName);
+    res.json(createSuccessResponse({}, `Job ${jobName} deleted successfully`));
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+}
+
+export const listJobsHandler = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const jobs = await jenkinsService.listJob();
+    res.json(createSuccessResponse({ jobs }, `Jobs listed successfully`));
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+}
