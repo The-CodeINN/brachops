@@ -97,7 +97,7 @@ export const createJenkinsJobHandler = async (
 ) => {
   try {
     // Validate input
-    const { jobName, imageName } = req.body;
+    const { jobName, imageName, projectType, envVars } = req.body;
     console.log(req.body);
 
     // Check if job already exists
@@ -106,7 +106,7 @@ export const createJenkinsJobHandler = async (
     }
 
     // Generate pipeline script and XML configuration
-    const pipelineScript = generatePipeline(imageName);
+    const pipelineScript = generatePipeline(imageName, projectType, envVars);
     const xml = createJenkinsJobXML(pipelineScript);
 
     // Create Jenkins job

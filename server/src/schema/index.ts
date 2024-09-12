@@ -17,6 +17,7 @@ export const createJobSchema = z.object({
       .min(1, "Image name is required and must follow the Docker tag format")
       .regex(dockerTagRegex, "Invalid Docker tag format"),
     projectType: z.enum([".NET Core", "Node.js"]),
+    envVars: z.record(z.string(), z.string()), // Add envVars property
   }),
 });
 

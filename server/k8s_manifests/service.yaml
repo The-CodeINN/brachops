@@ -1,0 +1,15 @@
+# this should be placed in /var/lib/jenkins/workspace using sudo
+apiVersion: v1
+kind: Service
+metadata:
+  name: quizzie-service # Name of the service
+spec:
+  selector:
+    app: my-app # Match the label defined in the deployment
+  ports:
+    - name: http # Name for the first port
+      protocol: TCP
+      port: 8080 # Port on the service (exposed to the outside)
+      targetPort: 8080 # Port on the container (matches Dockerfile)
+      nodePort: 30000
+  type: NodePort # Type of service (LoadBalancer, NodePort, ClusterIP)
