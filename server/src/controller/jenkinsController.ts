@@ -52,15 +52,17 @@ export const getBuildStatusHandler = async (
     const { jobName, buildNumber } = req.params;
     const status = await jenkinsService.getBuildStatus(jobName, parseInt(buildNumber, 10));
 
-        // Extract relevant information from status
-        const relevantInfo = {
-          fullDisplayName: status.buildInfo.fullDisplayName,
-          number: status.buildInfo.number,
-          result: status.buildInfo.result,
-          url: status.buildInfo.url,
-          duration: status.buildInfo.duration,
-          parameters: status.buildInfo.actions.find((action: any) => action._class === "hudson.model.ParametersAction")?.parameters
-        };
+    // Extract relevant information from status
+    const relevantInfo = {
+      fullDisplayName: status.buildInfo.fullDisplayName,
+      number: status.buildInfo.number,
+      result: status.buildInfo.result,
+      url: status.buildInfo.url,
+      duration: status.buildInfo.duration,
+      parameters: status.buildInfo.actions.find(
+        (action: any) => action._class === "hudson.model.ParametersAction"
+      )?.parameters,
+    };
 
     res.json(createSuccessResponse(relevantInfo, "Build status retrieved successfully"));
   } catch (error) {
@@ -76,7 +78,7 @@ export const createJenkinsJobHandler = async (
 ) => {
   try {
     // Validate input
-    const { jobName, imageName } = req.body;
+    const { jobName, imageName, projectType } = req.body;
     console.log(req.body);
 
     // Check if job already exists
@@ -85,7 +87,7 @@ export const createJenkinsJobHandler = async (
     }
 
     // Generate pipeline script and XML configuration
-    const pipelineScript = generatePipeline(imageName);
+    const pipelineScript = generatePipeline(imageName, projectType);
     const xml = createJenkinsJobXML(pipelineScript);
 
     // Create Jenkins job
@@ -95,7 +97,11 @@ export const createJenkinsJobHandler = async (
     const buildResult = await jenkinsService.triggerJob(jobName);
 
     // Return success response
-    res.status(201).json(createSuccessResponse({ buildResult }, `Job ${jobName} created and triggered successfully`));
+    res
+      .status(201)
+      .json(
+        createSuccessResponse({ buildResult }, `Job ${jobName} created and triggered successfully`)
+      );
   } catch (error) {
     log.error(error);
     next(error);
