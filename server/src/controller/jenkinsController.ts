@@ -88,12 +88,7 @@ export const createJenkinsJobHandler = async (
 ) => {
   try {
     // Validate input
-<<<<<<< Updated upstream
     const { jobName, imageName, projectType } = req.body;
-    console.log(req.body);
-=======
-    const { jobName, imageName } = req.body;
->>>>>>> Stashed changes
 
     // Check if job already exists
     if (await jenkinsService.checkJobExists(jobName)) {
@@ -116,8 +111,6 @@ export const createJenkinsJobHandler = async (
       .json(
         createSuccessResponse({ buildResult }, `Job ${jobName} created and triggered successfully`)
       );
-<<<<<<< Updated upstream
-=======
   } catch (error) {
     log.error(error);
     next(error);
@@ -182,7 +175,6 @@ export const buildJob = async (
     } else {
       return res.status(404).json({ error: `Job ${jobName} does not exist` });
     }
->>>>>>> Stashed changes
   } catch (error) {
     log.error(error);
     next(error);
