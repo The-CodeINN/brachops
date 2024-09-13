@@ -3,6 +3,7 @@ import { log } from "$/utils/logger";
 import * as jenkinsService from "$/service/jenkinsService";
 import { createJenkinsJobXML } from "$/helpers/configXml";
 import { generatePipeline } from "$/helpers/pipeline";
+import { generateGitPipeline } from "$/helpers/gitPipeline";
 import {
   type GetBuildStatusInput,
   type CheckJobExistsInput,
@@ -10,17 +11,61 @@ import {
   CreateScanJobInput,
 } from "$/schema";
 import { createSuccessResponse } from "$/utils/apiResponse";
-import { generateGitPipeline } from "$/helpers/gitPipeline";
+import { pollQueueForBuildNumber } from "$/helpers/pollQueueForBuildNumber";
+import { pollBuildStatus } from "$/helpers/pollBuildStatus";
+import { SocketAddress } from "net";
+
+interface JobInfo {
+  name: string;
+  url: string;
+  color: string;
+}
+
+interface JenkinsInfo {
+  numExecutors: number;
+  jobs: JobInfo[];
+  url: string;
+}
+
+interface BuildInfo {
+  fullDisplayName: string;
+  number: number;
+  result: string;
+  url: string;
+  duration: number;
+  parameters?: any;
+}
+
+interface JobInfo {
+  name: string;
+  url: string;
+  color: string;
+}
+
+interface JenkinsInfo {
+  numExecutors: number;
+  jobs: JobInfo[];
+  url: string;
+}
+
+interface BuildInfo {
+  fullDisplayName: string;
+  number: number;
+  result: string;
+  url: string;
+  duration: number;
+  parameters?: any;
+}
 
 // Get Jenkins info
 export const getJenkinsInfoHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const info = await jenkinsService.getJenkinsInfo();
+    const info: JenkinsInfo = await jenkinsService.getJenkinsInfo();
 
     // Extract relevant information
     const relevantInfo = {
       numExecutors: info.numExecutors,
-      jobs: info.jobs.map((job: any) => ({
+      jobs: info.jobs.map((job: JobInfo) => ({
         name: job.name,
         url: job.url,
         color: job.color,
@@ -59,7 +104,10 @@ export const getBuildStatusHandler = async (
 ) => {
   try {
     const { jobName, buildNumber } = req.params;
-    const status = await jenkinsService.getBuildStatus(jobName, parseInt(buildNumber, 10));
+    const status: { buildInfo: BuildInfo } = await jenkinsService.getBuildStatus(
+      jobName,
+      parseInt(buildNumber, 10)
+    );
 
     // Extract relevant information from status
     const relevantInfo = {
@@ -68,9 +116,7 @@ export const getBuildStatusHandler = async (
       result: status.buildInfo.result,
       url: status.buildInfo.url,
       duration: status.buildInfo.duration,
-      parameters: status.buildInfo.actions.find(
-        (action: any) => action._class === "hudson.model.ParametersAction"
-      )?.parameters,
+      parameters: status.buildInfo.parameters,
     };
 
     res.json(createSuccessResponse(relevantInfo, "Build status retrieved successfully"));
@@ -89,9 +135,10 @@ export const createJenkinsJobHandler = async (
   try {
     // Validate input
     const { jobName, imageName, projectType } = req.body;
+    const editedName = "deploy-" + jobName;
 
     // Check if job already exists
-    if (await jenkinsService.checkJobExists(jobName)) {
+    if (await jenkinsService.checkJobExists(editedName)) {
       return res.status(409).json({ error: `Job ${jobName} already exists` });
     }
 
@@ -100,17 +147,34 @@ export const createJenkinsJobHandler = async (
     const xml = createJenkinsJobXML(pipelineScript);
 
     // Create Jenkins job
-    await jenkinsService.createJenkinsJob(jobName, xml);
+    await jenkinsService.createJenkinsJob(editedName, xml);
 
     // Trigger the build
-    const buildResult = await jenkinsService.triggerJob(jobName);
+    const buildResult = await jenkinsService.triggerJob(editedName);
 
     // Return success response
     res
       .status(201)
-      .json(
-        createSuccessResponse({ buildResult }, `Job ${jobName} created and triggered successfully`)
-      );
+      .json(createSuccessResponse({}, `Job ${jobName} created and triggered successfully`));
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+};
+
+export const stopBuildHandler = async (
+  req: Request<GetBuildStatusInput["params"]>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { jobName, buildNumber } = req.params;
+
+    // Stop the build
+    await jenkinsService.stopBuild(jobName, parseInt(buildNumber, 10));
+
+    // Return success response
+    res.json(createSuccessResponse({}, `Build ${buildNumber} stopped successfully`));
   } catch (error) {
     log.error(error);
     next(error);
@@ -125,30 +189,33 @@ export const createScanJobHandler = async (
 ) => {
   try {
     // Validate input
-    const { jobName, gitUrl } = req.body;
-    const exists = await jenkinsService.checkJobExists(jobName);
+    const { jobName, gitUrl, buildPath } = req.body;
+    const editedName = "scan-" + jobName;
+    const exists = await jenkinsService.checkJobExists(editedName);
     if (exists) {
       return res.status(409).json({ error: `Job ${jobName} already exists` });
     }
 
     // Generate pipeline script and XML configuration
-    const pipelineScript = generateGitPipeline(jobName, gitUrl);
+    const pipelineScript = generateGitPipeline(editedName, gitUrl, buildPath);
     const xml = createJenkinsJobXML(pipelineScript);
 
     // Create Jenkins job
-    await jenkinsService.createScanJob(jobName, xml);
+    await jenkinsService.createScanJob(editedName, xml);
 
     // Trigger the build
-    const buildResult = await jenkinsService.triggerJob(jobName);
+    const buildResult = await jenkinsService.triggerJob(editedName);
+
+    // Poll Queue for number
+    const buildNumber = await pollQueueForBuildNumber(buildResult.queueItem);
+    const sonarUrl = await pollBuildStatus(editedName, buildNumber);
 
     // Return success response
     res
       .status(201)
       .json(
-        createSuccessResponse({ buildResult }, `Job ${jobName} created and triggered successfully`)
+        createSuccessResponse({ sonarUrl }, `Job ${jobName} created and triggered successfully`)
       );
-
-    const buildInfo = await jenkinsService.getBuildStatus(jobName, buildResult.queueItem.number);
   } catch (error) {
     log.error(error);
     next(error);
@@ -175,6 +242,31 @@ export const buildJob = async (
     } else {
       return res.status(404).json({ error: `Job ${jobName} does not exist` });
     }
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+};
+
+export const deleteJobHandler = async (
+  req: Request<CheckJobExistsInput["params"]>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { jobName } = req.params;
+    await jenkinsService.deleteJob(jobName);
+    res.json(createSuccessResponse({}, `Job ${jobName} deleted successfully`));
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+};
+
+export const listJobsHandler = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const jobs = await jenkinsService.listJob();
+    res.json(createSuccessResponse({ jobs }, `Jobs listed successfully`));
   } catch (error) {
     log.error(error);
     next(error);

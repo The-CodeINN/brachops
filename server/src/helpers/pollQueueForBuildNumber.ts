@@ -17,6 +17,7 @@ const pollQueueForBuildNumber = async (queueItem: number, timeout = 15000): Prom
       }
     }
   }
+  console.log("Job started...");
 
   return buildNumber;
 };

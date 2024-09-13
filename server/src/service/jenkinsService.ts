@@ -47,6 +47,20 @@ export const getBuildStatus = async (jobName: string, buildNumber: number) => {
   };
 };
 
+// stop build
+export const stopBuild = async (jobName: string, buildNumber: number) => {
+  await jenkins.build.stop(jobName, buildNumber);
+}
+
+// delete job
+export const deleteJob = async (jobName: string) => {
+  await jenkins.job.destroy(jobName);
+}
+
+// list job 
+export const listJob = async () => {
+  return await jenkins.job.list();
+}
 export const createCredentials = async (credentials: any) => {
   //@ts-expect-error - The type definitions for the jenkins-client library are incorrect
   return await jenkins.credentials.create(credentials);

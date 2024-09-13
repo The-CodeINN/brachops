@@ -2,22 +2,22 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./landing/pages/Home";
 import About from "./landing/pages/About";
 import NotFound from "./dashboard/pages/NotFound";
-import PublicLayout from "./landing/layout";
-import PrivateLayout from "./dashboard/layout";
 import CreateDeployment from "./dashboard/pages/CreateDeployment";
 import CodeScan from "./dashboard/pages/CodeScan";
+import LandingLayout from "./landing/layout";
+import DashboardLayout from "./dashboard/layout";
 
 function App() {
   return (
     <>
       <Routes>
-        <Route element={<PublicLayout />}>
+        <Route element={<LandingLayout />}>
           // Landing routes
           <Route index element={<Home />} />
           <Route path="about" element={<About />} />
         </Route>
 
-        <Route element={<PrivateLayout />}>
+        <Route element={<DashboardLayout />}>
           {/* Dashboard routes */}
           <Route path="/create-deployment" element={<CreateDeployment />} />
           <Route path="/codescan" element={<CodeScan />} />

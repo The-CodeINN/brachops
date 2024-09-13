@@ -24,6 +24,7 @@ export const createScanJobSchema = z.object({
   body: z.object({
     jobName: z.string().min(1, "Job name is required and must be a string"),
     gitUrl: z.string().min(1, "Git URL is required and must be a string"),
+    buildPath: z.string().min(1, ".NET build path (.csproj) is required and must be a string"),
   }),
 });
 

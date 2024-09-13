@@ -1,12 +1,12 @@
-const generateGitPipeline = (imageName: string, gitUrl: string) => {
+const generateGitPipeline = (jobName: string, gitUrl: string, buildPath: string) => {
   return `
 pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = "${imageName}"
+    IMAGE_NAME = "${jobName}"
     GIT_URL = "${gitUrl}"
-    PROJECT_PATH = 'server/quizzie/quizzie.csproj'
+    PROJECT_PATH = "${buildPath}"
   }
 
   stages {
@@ -43,7 +43,7 @@ pipeline {
             withSonarQubeEnv('sonarqube') {
                 sh '''
                    export PATH="$PATH:$HOME/.dotnet/tools"
-                   dotnet sonarscanner begin /k:"quizzie" /n:"quizzie"
+                   dotnet sonarscanner begin /k:"${jobName}" /n:"brachops"
                 '''
             }
         }
@@ -67,21 +67,12 @@ pipeline {
         }
     }
 
-    stage('Fetch SonarQube Report URL') {
-            steps {
-                script {
-                    def sonarReportFile = 'path_to_workspace/.sonarqube/out/.sonar/report-task.txt'
-                    def sonarTaskUrl = sh(script: "grep '^ceTaskUrl=' \${sonarReportFile} | cut -d '=' -f 2", returnStdout: true).trim()
-                    echo "SonarQube analysis report URL: \${sonarTaskUrl}"
-                    
-                    // Return this URL to the user (e.g., through an API or UI)
-                }
-            }
-        }
-
     stage('File System Scan') {
         steps {
-            sh "trivy fs --format table -o trivy-fs-report.html server/quizzie"
+            script {
+                def rootFolder = sh(script: "dirname ${buildPath}", returnStdout: true).trim()
+                sh "trivy fs --format table -o trivy-fs-report.html \${rootFolder}"
+                }
             }
         }
     }
