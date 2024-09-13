@@ -4,6 +4,7 @@ dotenv.config();
 
 interface Config {
   port: number;
+  MINIKUBE_URL: string;
   jenkins: {
     jenkinsUrl: string;
     jenkinsUserName: string;
@@ -18,6 +19,7 @@ const config: Config = {
     jenkinsUserName: process.env.JENKINS_USERNAME || "",
     jenkinsPassword: process.env.JENKINS_PASSWORD || "",
   },
+  MINIKUBE_URL: process.env.MINIKUBE_URL || "",
 };
 
 export default config;
