@@ -71,8 +71,7 @@ const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js
         ]) {
           script {
             withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-              sh "docker run -d -p 8082:3000 -e NODE_ENV=production \${IMAGE_NAME}"
-              sh "tail -f /dev/null"
+              sh "docker run -d -p 8081:8080 \${IMAGE_NAME}"
             }
           }
         }
