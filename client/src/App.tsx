@@ -8,6 +8,7 @@ import LandingLayout from './landing/layout';
 import DashboardLayout from './dashboard/layout';
 import Deployments from './dashboard/pages/deployments';
 import DeploymentDetails from './dashboard/pages/DeploymentDetail';
+import DeploymentDetailsTable from './dashboard/pages/DeploymentDetailsTable';
 
 function App() {
   return (
@@ -24,7 +25,11 @@ function App() {
           <Route path='/create-deployment' element={<CreateDeployment />} />
           <Route path='/codescan' element={<CodeScan />} />
           <Route path='/deployments' element={<Deployments />} />
-          <Route path='/deployment/:id' element={<DeploymentDetails />} />
+          <Route
+            path='/deployment/:name'
+            element={<DeploymentDetailsTable />}
+          />
+          <Route path='/deployment/:name/:id' element={<DeploymentDetails />} />
         </Route>
 
         {/* Catch all routes */}

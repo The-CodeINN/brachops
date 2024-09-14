@@ -53,10 +53,13 @@ export const routes = (app: Application) => {
     jenkinsLogController.streamBuildLogHandler
   ); // http://localhost:3000/jenkins/job/MyJob/build/1/log/stream or http://localhost:3000/jenkins/job/MyJob/build/1/log/stream?type=text&delay=1000 or http://localhost:3000/jenkins/job/MyJob/build/1/log/stream?type=html&delay=1000
 
+  // Stop a build
   app.get("/jenkins/job/:jobName/build/:buildNumber/stop", jenkinsController.stopBuildHandler); // http://localhost:3000/jenkins/job/MyJob/build/1/stop
 
+  // Delete a job
   app.delete("/jenkins/job/:jobName", jenkinsController.deleteJobHandler); // http://localhost:3000/jenkins/job/MyJob
 
+  // List all jobs
   app.get("/jenkins/jobs", jenkinsController.listJobsHandler); // http://localhost:3000/jenkins/jobs
 
   // Trigger a build
@@ -72,4 +75,7 @@ export const routes = (app: Application) => {
     validateResource(createScanJobSchema),
     jenkinsController.createScanJobHandler
   ); // http://localhost:3000/jenkins/scan
+
+  // Get job with builds
+  app.get("/jenkins/jobsWithBuilds", jenkinsController.getJobWithBuildsHandler); // http://localhost:3000/jenkins/jobsWithBuilds
 };
