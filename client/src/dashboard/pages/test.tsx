@@ -19,21 +19,22 @@ const PrivateLayout: React.FC = () => {
   };
 
   return (
-    <div className='h-screen flex bg-gray-100 dark:bg-gray-950 transition-colors duration-200'>
+    <div className='min-h-screen grid grid-cols-1 lg:grid-cols-[auto,1fr] grid-rows-[auto,1fr] bg-gray-100 dark:bg-black transition-colors duration-200'>
       <Sidebar
         sidebarItems={sidebarItems}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        className='flex-shrink-0'
+        className='row-start-1 row-span-full'
       />
-      <div className='flex-grow flex flex-col overflow-hidden  md:m-3 bg-white dark:bg-background shadow transition-colors duration-200 rounded-lg border'>
-        <Topbar onMenuClick={toggleSidebar} className='flex-shrink-0' />
-        <main className='flex-grow overflow-auto  p-4'>
-          <div className='max-w-7xl mx-auto'>
-            <Outlet />
-          </div>
-        </main>
-      </div>
+      <main className='md:m-3 lg:col-start-2 md:border rounded-lg bg-white dark:bg-background shadow transition-colors duration-200'>
+        <Topbar
+          onMenuClick={toggleSidebar}
+          className='col-span-full lg:col-start-2'
+        />
+        <div className='overflow-y-auto min-h-[calc(100vh-4rem)] p-4'>
+          <Outlet />
+        </div>
+      </main>
     </div>
   );
 };

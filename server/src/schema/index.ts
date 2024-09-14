@@ -21,6 +21,14 @@ export const createJobSchema = z.object({
   }),
 });
 
+export const createScanJobSchema = z.object({
+  body: z.object({
+    jobName: z.string().min(1, "Job name is required and must be a string"),
+    gitUrl: z.string().min(1, "Git URL is required and must be a string"),
+    buildPath: z.string().min(1, ".NET build path (.csproj) is required and must be a string"),
+  }),
+});
+
 export const getBuildStatusSchema = z.object({
   params: z.object({
     jobName: z.string().min(1, "Job name is required and must be a string"),
@@ -83,3 +91,4 @@ export type StreamBuildLogInput = z.infer<typeof streamBuildLogSchema>;
 export type CheckJobExistsInput = z.infer<typeof checkJobExistsSchema>;
 export type CreateJobInput = z.infer<typeof createJobSchema>;
 export type GetBuildStatusInput = z.infer<typeof getBuildStatusSchema>;
+export type CreateScanJobInput = z.infer<typeof createScanJobSchema>;
