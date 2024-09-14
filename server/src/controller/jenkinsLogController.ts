@@ -2,7 +2,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import * as logService from "$/service/jenkinsLogService";
 import { log } from "$/utils/logger";
 import { type GetBuildLogInput, type StreamBuildLogInput } from "$/schema";
-import c from "config";
+
 
 export const getBuildLogHandler = async (
   req: Request<GetBuildLogInput["params"], object, object, GetBuildLogInput["query"]>,

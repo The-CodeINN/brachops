@@ -8,12 +8,11 @@ import {
   type GetBuildStatusInput,
   type CheckJobExistsInput,
   type CreateJobInput,
-  CreateScanJobInput,
+  type CreateScanJobInput,
 } from "$/schema";
 import { createSuccessResponse } from "$/utils/apiResponse";
 import { pollQueueForBuildNumber } from "$/helpers/pollQueueForBuildNumber";
 import { pollBuildStatus } from "$/helpers/pollBuildStatus";
-import { SocketAddress } from "net";
 
 interface JobInfo {
   name: string;
@@ -40,6 +39,13 @@ interface JobInfo {
   name: string;
   url: string;
   color: string;
+}
+
+interface Build {
+  number: number;
+  result: string;
+  duration: number;
+  url: string;
 }
 
 interface JenkinsInfo {
@@ -267,6 +273,37 @@ export const listJobsHandler = async (req: Request, res: Response, next: NextFun
   try {
     const jobs = await jenkinsService.listJob();
     res.json(createSuccessResponse({ jobs }, `Jobs listed successfully`));
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+};
+
+export const getJobWithBuildsHandler = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const jobs = await jenkinsService.listJob();
+
+    // Process each job and get its builds
+    const jobsWithBuilds = await Promise.all(
+      jobs.map(async (job: JobInfo) => {
+        const jobInfo = await jenkinsService.getJobWithBuilds(job.name);
+        return {
+          name: job.name,
+          url: job.url,
+          color: job.color,
+          builds: jobInfo.allBuilds.map((build: Build) => ({
+            number: build.number,
+            result: build.result,
+            duration: build.duration,
+            url: build.url,
+          })),
+        };
+      })
+    );
+
+    res.json(
+      createSuccessResponse({ jobs: jobsWithBuilds }, "Jobs with builds listed successfully")
+    );
   } catch (error) {
     log.error(error);
     next(error);
