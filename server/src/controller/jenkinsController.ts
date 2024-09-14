@@ -140,8 +140,9 @@ export const createJenkinsJobHandler = async (
 ) => {
   try {
     // Validate input
-    const { jobName, imageName, projectType } = req.body;
+    const { jobName, imageName, projectType, envVars } = req.body;
     const editedName = "deploy-" + jobName;
+    console.log(req.body);
 
     // Check if job already exists
     if (await jenkinsService.checkJobExists(editedName)) {
@@ -149,7 +150,7 @@ export const createJenkinsJobHandler = async (
     }
 
     // Generate pipeline script and XML configuration
-    const pipelineScript = generatePipeline(imageName, projectType);
+    const pipelineScript = generatePipeline(imageName, projectType, envVars);
     const xml = createJenkinsJobXML(pipelineScript);
 
     // Create Jenkins job
