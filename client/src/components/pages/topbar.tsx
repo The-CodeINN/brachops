@@ -2,20 +2,22 @@ import React from 'react';
 import { MenuIcon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { ModeToggle } from '../global/mode-toggle';
+import { useSidebarStore } from '@/store/sidebarStore';
 
 interface TopbarProps {
-  onMenuClick: () => void;
   className?: string;
 }
 
-const Topbar: React.FC<TopbarProps> = ({ onMenuClick, className }) => {
+const Topbar: React.FC<TopbarProps> = ({ className }) => {
+  const { toggleSidebar } = useSidebarStore();
+
   return (
     <header
       className={` container border-b border-border h-14 flex items-center justify-between px-4 ${className}`}
     >
       <div className='flex items-center'>
         <Button
-          onClick={onMenuClick}
+          onClick={toggleSidebar}
           variant={'outline'}
           className='text-foreground p-2 rounded-md lg:hidden mr-4'
         >
