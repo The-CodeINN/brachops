@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { JobWithBuildsResponse, JobWithBuilds, Build } from '@/types';
+import { JobWithBuilds, Build } from '@/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,12 +24,8 @@ import { MoreHorizontal } from 'lucide-react';
 const DeploymentDetailsTable = () => {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
-  const { getJobsWithBuilds } = useDeployments();
-  const { data, isLoading, error } = getJobsWithBuilds as {
-    data?: JobWithBuildsResponse;
-    isLoading: boolean;
-    error: Error | null;
-  };
+  const { GetJobsWithBuilds } = useDeployments();
+  const { data, isLoading, error } = GetJobsWithBuilds();
 
   if (error) return <div>Error: {error.message}</div>;
 
