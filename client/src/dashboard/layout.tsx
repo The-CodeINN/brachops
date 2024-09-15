@@ -11,9 +11,9 @@ const PrivateLayout: React.FC = () => {
 
   const sidebarItems = {
     links: [
-      { label: 'Deploy Code', path: '/create-deployment', icon: ImportIcon },
-      { label: 'Deployments', path: '/deployments', icon: BookIcon },
+      { label: 'Deploy Code', path: '/deploy', icon: ImportIcon },
       { label: 'Scan Code', path: '/codescan', icon: ScanIcon },
+      { label: 'Deployments', path: '/deployments', icon: BookIcon },
       { label: 'Scan Details', path: '/scan-details', icon: NotebookIcon },
     ],
   };

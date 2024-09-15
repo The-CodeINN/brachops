@@ -1,21 +1,27 @@
-import { LucideIcon } from "lucide-react";
-import { Button, ButtonProps } from "../ui/button";
-import { cn } from "@/lib/utils";
+import { LucideIcon } from 'lucide-react';
+import { Button, ButtonProps } from '../ui/button';
+import { cn } from '@/lib/utils';
 
 interface SidebarButtonProps extends ButtonProps {
   icon?: LucideIcon;
+  isActive?: boolean;
 }
 
 const SidebarButton = ({
   icon: Icon,
   className,
   children,
+  isActive,
   ...props
 }: SidebarButtonProps) => {
   return (
     <Button
-      variant="ghost"
-      className={cn("gap-2 justify-start", className)}
+      variant={isActive ? 'secondary' : 'ghost'}
+      className={cn(
+        'gap-2 justify-start',
+        isActive ? 'text-primary font-bold' : '',
+        className
+      )}
       {...props}
     >
       {Icon && <Icon size={20} />}

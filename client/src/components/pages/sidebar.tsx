@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { MountainIcon } from '@/assets/icons/mountainIcon';
 import SidebarButton from '../global/sidebar-button';
 import { SidebarItems } from '@/types';
@@ -19,6 +19,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   className,
 }) => {
+  const location = useLocation();
+
   return (
     <>
       {/* Overlay */}
@@ -36,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         } lg:relative lg:transform-none ${className}`}
       >
         <div className='h-full px-3 py-4 overflow-y-auto'>
-          <Link to='/create-deployment' className='flex items-center mb-5'>
+          <Link to='/' className='flex items-center mb-5 border-b pb-5'>
             <MountainIcon className='h-8 w-8' aria-hidden='true' />
             <h1 className='text-2xl font-bold ml-2'>BrachOps</h1>
           </Link>
@@ -53,7 +55,11 @@ const Sidebar: React.FC<SidebarProps> = ({
           <nav className='pt-8'>
             {sidebarItems.links.map((link, index) => (
               <Link key={index} to={link.path}>
-                <SidebarButton icon={link.icon} className='w-full mb-2'>
+                <SidebarButton
+                  icon={link.icon}
+                  className='w-full mb-2'
+                  isActive={location.pathname === link.path} // Highlight active link
+                >
                   {link.label}
                 </SidebarButton>
               </Link>
