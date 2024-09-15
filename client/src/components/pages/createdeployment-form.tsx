@@ -1,80 +1,139 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import {
   Form,
   FormControl,
-  //FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Plus, Minus } from 'lucide-react';
 
-// Define the schema with validation for both fields
-const FormSchema = z.object({
-  projectName: z.string().min(2, {
-    message: "Project name must be at least 2 characters.",
-  }),
-  imageTag: z.string().min(1, {
-    message: "Image tag cannot be empty.",
-  }),
+const deploymentFormSchema = z.object({
+  projectName: z.string().min(1, 'Project name is required'),
+  imageTag: z.string().min(1, 'Image tag is required'),
+  environmentVariables: z.array(
+    z.object({
+      key: z.string().min(1, 'Key is required'),
+      value: z.string().min(1, 'Value is required'),
+    })
+  ),
 });
 
-export function InputForm() {
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
+type DeploymentFormValues = z.infer<typeof deploymentFormSchema>;
+
+interface DeploymentFormProps {
+  onSubmit: (data: DeploymentFormValues) => void;
+}
+
+const DeploymentForm: React.FC<DeploymentFormProps> = ({ onSubmit }) => {
+  const form = useForm<DeploymentFormValues>({
+    resolver: zodResolver(deploymentFormSchema),
     defaultValues: {
-      projectName: "",
-      imageTag: "",
+      projectName: '',
+      imageTag: '',
+      environmentVariables: [{ key: '', value: '' }],
     },
   });
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
-    toast.success(
-      `Form submitted with Project Name: ${data.projectName} and Image Tag: ${data.imageTag}`
-    );
-  }
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'environmentVariables',
+  });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
         <FormField
           control={form.control}
-          name="projectName"
+          name='projectName'
           render={({ field }) => (
             <FormItem>
               <FormLabel>Project Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter your project name" {...field} />
+                <Input placeholder='Enter project name' {...field} />
               </FormControl>
-
               <FormMessage />
             </FormItem>
           )}
         />
         <FormField
           control={form.control}
-          name="imageTag"
+          name='imageTag'
           render={({ field }) => (
             <FormItem>
               <FormLabel>Image Tag</FormLabel>
               <FormControl>
-                <Input placeholder="Enter your image tag" {...field} />
+                <Input placeholder='Enter image tag' {...field} />
               </FormControl>
-
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button className="w-fit" type="submit">
-          Submit
+        <div>
+          <FormLabel>Environment Variables</FormLabel>
+          {fields.map((field, index) => (
+            <div key={field.id} className='flex items-center space-x-2 mt-2'>
+              <FormField
+                control={form.control}
+                name={`environmentVariables.${index}.key`}
+                render={({ field }) => (
+                  <FormItem className='flex-1'>
+                    <FormControl>
+                      <Input placeholder='Key' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name={`environmentVariables.${index}.value`}
+                render={({ field }) => (
+                  <FormItem className='flex-1'>
+                    <FormControl>
+                      <Input placeholder='Value' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type='button'
+                variant='outline'
+                size='icon'
+                onClick={() => remove(index)}
+                className='flex-shrink-0'
+              >
+                <Minus className='h-4 w-4' />
+              </Button>
+            </div>
+          ))}
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            onClick={() => append({ key: '', value: '' })}
+            className='mt-2'
+          >
+            <Plus className='h-4 w-4 mr-2' />
+            Add Environment Variable
+          </Button>
+        </div>
+        <Button
+          type='submit'
+          className='bg-primary hover:bg-primary/90 text-primary-foreground'
+        >
+          Submit Deployment Job
         </Button>
       </form>
     </Form>
   );
-}
+};
+
+export default DeploymentForm;

@@ -1,95 +1,93 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import {
   Form,
   FormControl,
-  //FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
-// Define schema for Scan Code Page
-const ScanCodeSchema = z.object({
-  jobName: z
-    .string()
-    .min(2, { message: "Job name must be at least 2 characters." }),
-  githubUrl: z.string().url({ message: "Enter a valid GitHub URL." }),
-  csprojLocation: z
-    .string()
-    .min(1, { message: "CSProj location is required." }),
+const codeQualityScanFormSchema = z.object({
+  projectName: z.string().min(1, 'Project name is required'),
+  githubUrl: z.string().url('Invalid GitHub URL'),
+  csprojLocation: z.string().min(1, 'Csproj file location is required'),
 });
 
-export function ScanCodeForm() {
-  const form = useForm<z.infer<typeof ScanCodeSchema>>({
-    resolver: zodResolver(ScanCodeSchema),
+type CodeQualityScanFormValues = z.infer<typeof codeQualityScanFormSchema>;
+
+interface CodeQualityScanFormProps {
+  onSubmit: (data: CodeQualityScanFormValues) => void;
+}
+
+const CodeQualityScanForm: React.FC<CodeQualityScanFormProps> = ({
+  onSubmit,
+}) => {
+  const form = useForm<CodeQualityScanFormValues>({
+    resolver: zodResolver(codeQualityScanFormSchema),
     defaultValues: {
-      jobName: "",
-      githubUrl: "",
-      csprojLocation: "",
+      projectName: '',
+      githubUrl: '',
+      csprojLocation: '',
     },
   });
 
-  function onSubmit(data: z.infer<typeof ScanCodeSchema>) {
-    toast.success(
-      `Job Name: ${data.jobName}, GitHub URL: ${data.githubUrl}, CSProj Location: ${data.csprojLocation}`
-    );
-  }
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
-        {/* Job Name Field */}
+      <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
         <FormField
           control={form.control}
-          name="jobName"
+          name='projectName'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Job Name</FormLabel>
+              <FormLabel>Project Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter job name" {...field} />
+                <Input placeholder='Enter project name' {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        {/* GitHub URL Field */}
         <FormField
           control={form.control}
-          name="githubUrl"
+          name='githubUrl'
           render={({ field }) => (
             <FormItem>
               <FormLabel>GitHub URL</FormLabel>
               <FormControl>
-                <Input placeholder="Enter GitHub URL" {...field} />
+                <Input placeholder='Enter GitHub URL' {...field} />
               </FormControl>
-
               <FormMessage />
             </FormItem>
           )}
         />
-        {/* CSProj Location Field */}
         <FormField
           control={form.control}
-          name="csprojLocation"
+          name='csprojLocation'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>CSProj Location</FormLabel>
+              <FormLabel>Csproj File Location</FormLabel>
               <FormControl>
-                <Input placeholder="Enter CSProj location" {...field} />
+                <Input placeholder='Enter Csproj file location' {...field} />
               </FormControl>
-
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button
+          type='submit'
+          className='bg-primary hover:bg-primary/90 text-primary-foreground'
+        >
+          Submit Code Quality Scan
+        </Button>
       </form>
     </Form>
   );
-}
+};
+
+export default CodeQualityScanForm;

@@ -1,15 +1,10 @@
 import { DeploymentList } from '@/components/pages/deploymentList';
 import { StatCards } from '@/components/pages/statCards';
 import { useDeployments } from '@/queriesAndMutations';
-import { JobWithBuildsResponse } from '@/types';
 
 const Deployments = () => {
-  const { getJobsWithBuilds } = useDeployments();
-  const { data, isLoading, error } = getJobsWithBuilds as {
-    data?: JobWithBuildsResponse;
-    isLoading: boolean;
-    error: Error | null;
-  };
+  const { GetJobsWithBuilds } = useDeployments();
+  const { data, isLoading, error } = GetJobsWithBuilds();
 
   if (error) return <div>Error: {error.message}</div>;
 
