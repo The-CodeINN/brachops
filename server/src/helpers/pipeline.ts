@@ -1,4 +1,22 @@
-const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js"): string => {
+const escapeXML = (str: string): string => {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+
+const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js", envVars: Record<string, string>): string => {
+  // Escape imageName for XML
+  const escapedImageName = escapeXML(imageName);
+
+  // Escape environment variables for XML
+  const envVarsScript = Object.keys(envVars).map((key) => {
+    return `export ${escapeXML(key)}=${escapeXML(envVars[key])}`;
+  }).join(' && ');
+
   const commonPipelineStages = `
     stage('Check Docker Image on Docker Hub') {
       steps {
@@ -30,25 +48,17 @@ const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js
       }
     }
   `.trim();
-
   // Please note this script does not work as expected, it is just a placeholder
   const dotNetCorePipeline = `
     stage('Deploy Web App To Kubernetes') {
       steps {
-        withCredentials([
-          string(credentialsId: 'postgres_user', variable: 'POSTGRES_USER'),
-          string(credentialsId: 'postgres_password', variable: 'POSTGRES_PASSWORD'),
-          string(credentialsId: 'postgres_db', variable: 'POSTGRES_DB'),        
-          string(credentialsId: 'postgres_host', variable: 'POSTGRES_HOST'),
-          string(credentialsId: 'postgres_port', variable: 'POSTGRES_PORT'),
-          string(credentialsId: 'vault_addr', variable: 'VAULT_ADDR'),
-          string(credentialsId: 'vault-tok', variable: 'VAULT_TOKEN'),
-          string(credentialsId: 'my_kubernetes', variable: 'api_token')
-        ]) {
+        withCredentials([ string(credentialsId: 'my_kubernetes', variable: 'api_token') ]) {
           script {
             sh '''
-              envsubst < infra/k8s/server/deployment.yaml | kubectl --token $api_token --server http://127.0.0.1:45269 --insecure-skip-tls-verify=true apply -f -
-              envsubst < infra/k8s/server/service.yaml | kubectl --token $api_token --server http://127.0.0.1:45269 --insecure-skip-tls-verify=true apply -f -
+              ${envVarsScript}
+              cd ..
+              envsubst < deployment.yaml | kubectl --token $api_token --server http://127.0.0.1:43113 --insecure-skip-tls-verify=true apply -f -
+              envsubst < service.yaml | kubectl --token $api_token --server http://127.0.0.1:43113 --insecure-skip-tls-verify=true apply -f -
             '''
           }
         }
@@ -60,18 +70,14 @@ const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js
   const nodeJsPipeline = `
     stage('Run Node.js Container') {
       steps {
-        withCredentials([
-          string(credentialsId: 'postgres_user', variable: 'POSTGRES_USER'),
-          string(credentialsId: 'postgres_password', variable: 'POSTGRES_PASSWORD'),
-          string(credentialsId: 'postgres_db', variable: 'POSTGRES_DB'),
-          string(credentialsId: 'postgres_host', variable: 'POSTGRES_HOST'),
-          string(credentialsId: 'postgres_port', variable: 'POSTGRES_PORT'),
-          string(credentialsId: 'vault_addr', variable: 'VAULT_ADDR'),
-          string(credentialsId: 'vault_token', variable: 'VAULT_TOKEN')
-        ]) {
+        withCredentials([ string(credentialsId: 'my_kubernetes', variable: 'api_token') ]) {
           script {
             withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-              sh "docker run -d -p 8081:8080 \${IMAGE_NAME}"
+              sh '''
+                ${envVarsScript}
+                docker run -d -p 8082:3000 -e NODE_ENV=production \${IMAGE_NAME}
+                tail -f /dev/null
+              '''
             }
           }
         }
@@ -85,7 +91,8 @@ const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js
 pipeline {
   agent any
   environment {
-    IMAGE_NAME = "${imageName}"
+    IMAGE_NAME = "${escapedImageName}"
+    KUBECONFIG = '/home/jenkins/.kube/config'
   }
   stages {
     ${commonPipelineStages}
@@ -94,5 +101,6 @@ pipeline {
 }
   `.trim();
 };
+
 
 export { generatePipeline };
