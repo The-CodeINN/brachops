@@ -1,3 +1,4 @@
+# not needed anymore with new dynamic implementation, we dont need to create a deployment file manually in the jenkins workspace because when a build is triggered the file is auto generated along with the env variables specified by the user
 # // this should be placed in /var/lib/jenkins/workspace directory using sudo
 apiVersion: apps/v1
 kind: Deployment
@@ -14,22 +15,9 @@ spec:
         app: my-app
     spec:
       containers:
-        - name: app
-          image: ${IMAGE_NAME}
-          ports:
-            - containerPort: 8080
-          env:
-            - name: VAULT_ADDR
-              value: "$VAULT_ADDR"
-            - name: VAULT_TOKEN
-              value: "$VAULT_TOKEN"
-            - name: POSTGRES_USER
-              value: "$POSTGRES_USER"
-            - name: POSTGRES_PASSWORD
-              value: "$POSTGRES_PASSWORD"
-            - name: POSTGRES_DB
-              value: "$POSTGRES_DB"
-            - name: POSTGRES_HOST
-              value: "$POSTGRES_HOST"
-            - name: POSTGRES_PORT
-              value: "$POSTGRES_PORT"
+      - name: my-app-container
+        image: "{{IMAGE_NAME}}"
+        env:
+{{ENV_VARS}}
+        ports:
+        - containerPort: 8080
