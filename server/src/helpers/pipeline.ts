@@ -11,7 +11,7 @@ const sanitizeName = (name: string): string => {
   return name.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
 };
 
-const generatePipeline = (imageName: string, projectType: "DotNetCore" | "NodeJs", envVars: Record<string, string>): string => {
+const generatePipeline = (imageName: string, projectType: "DotNetCore" | "NodeJs", envVars: Record<string, string>, jobName: string): string => {
   // Construct the environment variables section for Kubernetes YAML
   let envYaml = '';
   if (envVars) {
@@ -24,6 +24,7 @@ const generatePipeline = (imageName: string, projectType: "DotNetCore" | "NodeJs
   }
 
   const sanitizedProjectType = sanitizeName(projectType);
+  const namespace = sanitizeName(jobName);
 
   // Dynamically generate the deployment.yaml content
   // TODO: Change sanitizedprojecttype-app to jobname-app the job name is the one added by user
@@ -32,6 +33,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ${sanitizedProjectType}-app
+  namespace: ${namespace}
 spec:
   replicas: 1
   selector:
@@ -56,6 +58,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ${sanitizedProjectType}-service
+  namespace: ${namespace}
 spec:
   selector:
     app: ${sanitizedProjectType}-app
@@ -118,6 +121,8 @@ const dotNetCorePipeline = `
             sh '''
               set -e
               ${envVarsScript}
+              echo 'Creating namespace ${namespace}'
+              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true create namespace ${namespace} || true
               echo 'Generating dynamic deployment.yaml for Kubernetes'
               cat << EOF > deployment.yaml
 ${deploymentYaml}
@@ -135,17 +140,17 @@ EOF
               echo 'Deploying ${imageName} to Minikube'
               kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f deployment.yaml
               kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f service.yaml
-              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true wait --for=condition=ready pod -l app=${sanitizedProjectType}-app --timeout=120s
+              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true wait --for=condition=ready pod -l app=${sanitizedProjectType}-app --timeout=120s -n ${namespace}
               echo 'Deployment completed successfully'
-              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 
+              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 -n ${namespace}
             '''
           } catch (Exception e) {
             echo 'Deployment failed: ' + e.message
             sh '''
               echo 'Describing deployment:'
-              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true describe deployment ${sanitizedProjectType}-app
+              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true describe deployment ${sanitizedProjectType}-app -n ${namespace}
               echo 'Fetching logs:'
-              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true logs deployment/${sanitizedProjectType}-app
+              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true logs deployment/${sanitizedProjectType}-app -n ${namespace}
             '''
             throw e
           }
@@ -186,6 +191,18 @@ pipeline {
   stages {
     ${commonPipelineStages}
     ${projectSpecificPipeline}
+  }
+  post {
+    always {
+      script {
+        withCredentials([string(credentialsId: 'my_kubernetes', variable: 'api_token')]) {
+          sh '''
+            echo 'Deleting namespace ${namespace}'
+            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true delete namespace ${namespace} || true
+          '''
+        }
+      }
+    }
   }
 }
   `.trim();

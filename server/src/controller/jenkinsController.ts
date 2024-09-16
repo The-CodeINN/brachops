@@ -13,6 +13,8 @@ import {
 import { createSuccessResponse } from "$/utils/apiResponse";
 import { pollQueueForBuildNumber } from "$/helpers/pollQueueForBuildNumber";
 import { pollBuildStatus } from "$/helpers/pollBuildStatus";
+import { exec } from "child_process";
+import util from 'util';
 
 interface JobInfo {
   name: string;
@@ -62,6 +64,44 @@ interface BuildInfo {
   duration: number;
   parameters?: any;
 }
+
+const sanitizeName = (name: string): string => {
+  // Remove non-alphanumeric characters and convert to lowercase
+  let sanitized = name.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
+  
+  // Remove the 'deploy-' prefix if it exists
+  if (sanitized.startsWith('deploy-')) {
+    sanitized = sanitized.substring(7);
+  }
+  
+  return sanitized;
+};
+
+const execPromise = util.promisify(exec);
+
+const deleteNamespace = async (namespace: string) => {
+  try {
+    const { stdout, stderr } = await execPromise(`kubectl delete namespace ${namespace}`);
+    if (stdout) {
+      log.info(`Namespace deletion stdout: ${stdout}`);
+    }
+    if (stderr) {
+      log.warn(`Namespace deletion stderr: ${stderr}`);
+    }
+  } catch (error) {
+    log.error(`Error deleting namespace: ${error}`);
+    throw error;
+  }
+};
+
+const deleteJenkinsJob = async (jobName: string) => {
+  try {
+    await jenkinsService.deleteJob(jobName);
+  } catch (error) {
+    log.error(`Error deleting Jenkins job: ${error}`);
+    throw error;
+  }
+};
 
 // Get Jenkins info
 export const getJenkinsInfoHandler = async (req: Request, res: Response, next: NextFunction) => {
@@ -150,7 +190,7 @@ export const createJenkinsJobHandler = async (
     }
 
     // Generate pipeline script and XML configuration
-    const pipelineScript = generatePipeline(imageName, projectType, envVars);
+    const pipelineScript = generatePipeline(imageName, projectType, envVars, jobName);
     const xml = createJenkinsJobXML(pipelineScript);
 
     // Create Jenkins job
@@ -262,8 +302,15 @@ export const deleteJobHandler = async (
 ) => {
   try {
     const { jobName } = req.params;
-    await jenkinsService.deleteJob(jobName);
-    res.json(createSuccessResponse({}, `Job ${jobName} deleted successfully`));
+    const namespace = sanitizeName(jobName); // Remove the deploy- prefix if present
+    
+    // Delete Jenkins job
+    await deleteJenkinsJob(jobName);
+
+    // Delete K8s namespace
+    await deleteNamespace(namespace);
+
+    res.json(createSuccessResponse({}, `Job ${jobName} and associated Kubernetes resources deleted successfully`));
   } catch (error) {
     log.error(error);
     next(error);
