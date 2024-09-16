@@ -47,19 +47,30 @@ export const streamBuildLogHandler = async (
     };
 
     const logStream = await logService.getBuildLogStream(streamOptions); // Await the stream
+    console.log("Log stream initialized");
 
     res.setHeader("Content-Type", "text/plain");
     res.setHeader("Transfer-Encoding", "chunked");
 
-    logStream.on("data", (chunk) => {
-      res.write(chunk);
-    });
+const timeout = setTimeout(() => {
+  res.status(504).end("Log streaming timed out");
+  logStream.destroy();  // Clean up the stream
+}, 10000);  // 10 seconds timeout
 
-    logStream.on("end", () => {
-      res.end();
-    });
+logStream.on("data", (chunk) => {
+  clearTimeout(timeout);  // If data is received, clear the timeout
+  console.log("Received data chunk: ", chunk.toString());
+  res.write(chunk);
+});
+
+logStream.on("end", () => {
+  clearTimeout(timeout);  // Ensure timeout is cleared when the stream ends
+  console.log("Log stream ended.");
+  res.end();
+});
 
     logStream.on("error", (error) => {
+      console.error("Error in log stream:", error);
       log.error(error);
       res.status(500).end("Error occurred while streaming log");
     });
