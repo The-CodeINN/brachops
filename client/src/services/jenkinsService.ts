@@ -30,6 +30,14 @@ class DeploymentService {
   ): Promise<AxiosResponse<DeploymentResponse>> {
     return axios.post<DeploymentResponse>(`${baseUrl}/jenkins/scan`, data);
   }
+
+  static async deleteJob(
+    jobName: string
+  ): Promise<AxiosResponse<DeploymentResponse>> {
+    return axios.delete<DeploymentResponse>(
+      `${baseUrl}/jenkins/job/${jobName}`
+    );
+  }
 }
 
 export { DeploymentService };
