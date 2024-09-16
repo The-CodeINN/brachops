@@ -1,5 +1,5 @@
 import { jenkins } from "$/utils/jenkinsClient";
-import { Readable } from "stream";
+import { type Readable } from "stream";
 
 export interface LogOptions {
   name: string;

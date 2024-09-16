@@ -1,17 +1,18 @@
 import { DeploymentList } from '@/components/pages/deploymentList';
+import { ServerErrorPage } from '@/components/pages/serverErrorPage';
 import { StatCards } from '@/components/pages/statCards';
 import { useDeployments } from '@/queriesAndMutations';
-import { JobWithBuildsResponse } from '@/types';
 
 const Deployments = () => {
-  const { getJobsWithBuilds } = useDeployments();
-  const { data, isLoading, error } = getJobsWithBuilds as {
-    data?: JobWithBuildsResponse;
-    isLoading: boolean;
-    error: Error | null;
-  };
+  const { GetJobsWithBuilds } = useDeployments();
+  const { data, isLoading, error } = GetJobsWithBuilds();
 
-  if (error) return <div>Error: {error.message}</div>;
+  if (error)
+    return (
+      <div className=' md:pt-10'>
+        <ServerErrorPage error={error as unknown as Error} />
+      </div>
+    );
 
   return (
     <div className='container mx-auto px-2 py-8'>

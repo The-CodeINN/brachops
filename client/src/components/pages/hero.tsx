@@ -36,7 +36,7 @@ function Hero() {
           on innovation.
         </p>
         <div className='flex flex-col md:flex-row justify-center w-full'>
-          <Link to='/create-deployment'>
+          <Link to='/deploy'>
             <Button className='animate-fade-in -translate-y-4 gap-1 text-white opacity-0 ease-in-out [--animation-delay:600ms] dark:text-black'>
               <span>Deploy Now </span>
               <ArrowRightIcon className='ml-1 size-4 transition-transform duration-300 ease-in-out group-hover:translate-x-1' />
