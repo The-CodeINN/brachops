@@ -37,7 +37,7 @@ function Hero() {
         <div className='flex flex-col md:flex-row justify-center gap-4 w-full'>
           <Link to='/deploy'>
             <Button
-              className='animate-fade-in -translate-y-4 gap-1 text-white opacity-0 ease-in-out [--animation-delay:600ms] py-6'
+              className='animate-fade-in -translate-y-4 gap-1 ease-in-out [--animation-delay:600ms] py-6'
               variant={'default'}
             >
               <span>Deploy Now </span>
@@ -46,8 +46,8 @@ function Hero() {
           </Link>
           <Link to='/codescan'>
             <Button
-              className='animate-fade-in -translate-y-4 gap-1 text-white opacity-0 ease-in-out [--animation-delay:800ms] py-6'
-              variant={'secondary'}
+              className='animate-fade-in -translate-y-4 gap-1 ease-in-out [--animation-delay:800ms] py-6'
+              variant={'outline'}
             >
               <span>Run Code Scan </span>
               <ShieldCheckIcon className='ml-1 size-4 transition-transform duration-300 ease-in-out group-hover:rotate-12' />
