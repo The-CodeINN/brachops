@@ -3,7 +3,7 @@ import { log } from "$/utils/logger";
 import * as jenkinsService from "$/service/jenkinsService";
 import { createJenkinsJobXML } from "$/helpers/configXml";
 import { generatePipeline } from "$/helpers/pipeline";
-import { generateGitPipeline } from "$/helpers/gitPipeline";
+import { ScanCodePipeline } from "$/helpers/ScanCodePipeline";
 import {
   type GetBuildStatusInput,
   type CheckJobExistsInput,
@@ -196,26 +196,26 @@ export const createScanJobHandler = async (
 ) => {
   try {
     // Validate input
-    const { jobName, gitUrl, buildPath } = req.body;
-    const editedName = "scan-" + jobName;
-    const exists = await jenkinsService.checkJobExists(editedName);
+    const { jobName, gitUrl, buildPath, projectType } = req.body;
+    //const editedName = "scan-" + jobName;
+    const exists = await jenkinsService.checkJobExists(jobName);
     if (exists) {
       return res.status(409).json({ error: `Job ${jobName} already exists` });
     }
 
     // Generate pipeline script and XML configuration
-    const pipelineScript = generateGitPipeline(editedName, gitUrl, buildPath);
+    const pipelineScript = ScanCodePipeline(jobName, gitUrl, buildPath, projectType);
     const xml = createJenkinsJobXML(pipelineScript);
 
     // Create Jenkins job
-    await jenkinsService.createScanJob(editedName, xml);
+    await jenkinsService.createScanJob(jobName, xml);
 
     // Trigger the build
-    const buildResult = await jenkinsService.triggerJob(editedName);
+    const buildResult = await jenkinsService.triggerJob(jobName);
 
     // Poll Queue for number
     const buildNumber = await pollQueueForBuildNumber(buildResult.queueItem);
-    const sonarUrl = await pollBuildStatus(editedName, buildNumber);
+    const sonarUrl = await pollBuildStatus(jobName, buildNumber);
 
     // Return success response
     res

@@ -16,7 +16,7 @@ export const createJobSchema = z.object({
       .string()
       .min(1, "Image name is required and must follow the Docker tag format")
       .regex(dockerTagRegex, "Invalid Docker tag format"),
-      projectType: z.enum(["DotNetCore", "NodeJs"]),
+    projectType: z.enum(["DotNetCore", "NodeJs"]),
     envVars: z.record(z.string(), z.string()), // Add envVars property
   }),
 });
@@ -26,6 +26,7 @@ export const createScanJobSchema = z.object({
     jobName: z.string().min(1, "Job name is required and must be a string"),
     gitUrl: z.string().min(1, "Git URL is required and must be a string"),
     buildPath: z.string().min(1, ".NET build path (.csproj) is required and must be a string"),
+    projectType: z.enum(["DotNetCore", "NodeJs"]),
   }),
 });
 

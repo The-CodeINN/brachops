@@ -1,19 +1,23 @@
 const escapeXML = (str: string): string => {
   return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 };
 
 const sanitizeName = (name: string): string => {
-  return name.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
+  return name.replace(/[^a-zA-Z0-9-]/g, "-").toLowerCase();
 };
 
-const generatePipeline = (imageName: string, projectType: "DotNetCore" | "NodeJs", envVars: Record<string, string>): string => {
+const generatePipeline = (
+  imageName: string,
+  projectType: "DotNetCore" | "NodeJs",
+  envVars: Record<string, string>
+): string => {
   // Construct the environment variables section for Kubernetes YAML
-  let envYaml = '';
+  let envYaml = "";
   if (envVars) {
     for (const [key, value] of Object.entries(envVars)) {
       envYaml += `
@@ -50,8 +54,8 @@ spec:
         env: ${envYaml}
   `;
 
-// Dynamically generate the service.yaml content
-const serviceYaml = `
+  // Dynamically generate the service.yaml content
+  const serviceYaml = `
 apiVersion: v1
 kind: Service
 metadata:
@@ -72,9 +76,11 @@ spec:
   const escapedImageName = escapeXML(imageName);
 
   // Escape environment variables for XML
-  const envVarsScript = Object.keys(envVars).map((key) => {
-    return `export ${escapeXML(key)}=${escapeXML(envVars[key])}`;
-  }).join(' && ');
+  const envVarsScript = Object.keys(envVars)
+    .map((key) => {
+      return `export ${escapeXML(key)}=${escapeXML(envVars[key])}`;
+    })
+    .join(" && ");
 
   const commonPipelineStages = `
     stage('Check Docker Image on Docker Hub') {
@@ -109,7 +115,7 @@ spec:
 
 `.trim();
 
-const dotNetCorePipeline = `
+  const dotNetCorePipeline = `
   stage('Deploy Web App To Kubernetes') {
     steps {
       withCredentials([string(credentialsId: 'my_kubernetes', variable: 'api_token')]) {
@@ -155,7 +161,7 @@ EOF
   }
 `.trim();
 
-const nodeJsPipeline = `
+  const nodeJsPipeline = `
 stage('Run Node.js Container') {
   steps {
     withCredentials([ string(credentialsId: 'my_kubernetes', variable: 'api_token') ]) {
@@ -174,7 +180,8 @@ stage('Run Node.js Container') {
 }
 `.trim();
 
-  const projectSpecificPipeline = projectType === "DotNetCore" ? dotNetCorePipeline : nodeJsPipeline;
+  const projectSpecificPipeline =
+    projectType === "DotNetCore" ? dotNetCorePipeline : nodeJsPipeline;
 
   return `
 pipeline {
