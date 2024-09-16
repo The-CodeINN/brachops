@@ -78,4 +78,10 @@ export const routes = (app: Application) => {
 
   // Get job with builds
   app.get("/jenkins/jobsWithBuilds", jenkinsController.getJobWithBuildsHandler); // http://localhost:3000/jenkins/jobsWithBuilds
+
+  app.get(
+    "/jenkins/pipelines/:jobName/runs/:buildNumber/nodes",
+    validateResource(getBuildStatusSchema),
+    jenkinsLogController.getBuildStageHandler
+  ); //http://localhost:3000/jenkins/pipelines/:jobName/runs/:buildNumber/nodes
 };

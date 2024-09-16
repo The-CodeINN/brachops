@@ -1,8 +1,9 @@
 import { type Request, type Response, type NextFunction } from "express";
 import * as logService from "$/service/jenkinsLogService";
 import { log } from "$/utils/logger";
-import { type GetBuildLogInput, type StreamBuildLogInput } from "$/schema";
-
+import { GetBuildStatusInput, type GetBuildLogInput, type StreamBuildLogInput } from "$/schema";
+import { customJenkinsClient } from "$/utils/jenkinsClient";
+import { createSuccessResponse } from "$/utils/apiResponse";
 
 export const getBuildLogHandler = async (
   req: Request<GetBuildLogInput["params"], object, object, GetBuildLogInput["query"]>,
@@ -65,6 +66,31 @@ export const streamBuildLogHandler = async (
     });
   } catch (error) {
     log.error(error);
+    next(error);
+  }
+};
+
+export const getBuildStageHandler = async (
+  req: Request<GetBuildStatusInput["params"]>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { jobName, buildNumber } = req.params;
+
+    const pipelineRunDetails = await customJenkinsClient.getPipelineRunDetails(
+      jobName,
+      buildNumber
+    );
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Transfer-Encoding", "chunked");
+
+    // Stream the pipeline run details
+    res.write(JSON.stringify(pipelineRunDetails));
+    res.end();
+  } catch (error) {
+    console.error("Failed to fetch pipeline run details:", error);
+    res.status(500).end("Error occurred while fetching pipeline run details");
     next(error);
   }
 };
