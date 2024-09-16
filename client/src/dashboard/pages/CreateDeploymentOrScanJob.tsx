@@ -99,7 +99,7 @@ const CreateDeploymentOrScanJob: React.FC = () => {
       <IconTabs onTabChange={handleTabChange} selectedTab={activeTab} />
       <Card className='mt-6'>
         <CardHeader>
-          <CardTitle className='text-2xl font-bold text-primary'>
+          <CardTitle className='text-2xl font-bold'>
             {activeTab === 'Deployment'
               ? 'Deployment Job'
               : 'Code Quality Scan'}
@@ -109,13 +109,13 @@ const CreateDeploymentOrScanJob: React.FC = () => {
           {activeTab === 'Deployment' ? (
             <DeploymentForm
               onSubmit={onDeploymentSubmit}
-              errors={formErrors}
+              serverErrors={formErrors}
               isLoading={createDeploymentMutation.isPending}
             />
           ) : (
             <CodeQualityScanForm
               onSubmit={onCodeQualityScanSubmit}
-              errors={formErrors}
+              serverErrors={formErrors}
               isLoading={createScanDeploymentMutation.isPending}
             />
           )}

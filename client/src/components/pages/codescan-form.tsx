@@ -25,13 +25,13 @@ export type CodeQualityScanFormValues = z.infer<
 
 interface CodeQualityScanFormProps {
   onSubmit: (data: CodeQualityScanFormValues) => void;
-  errors?: Record<string, string>;
+  serverErrors?: Record<string, string>;
   isLoading: boolean;
 }
 
 const CodeQualityScanForm: React.FC<CodeQualityScanFormProps> = ({
   onSubmit,
-  errors,
+  serverErrors,
   isLoading,
 }) => {
   const form = useForm<CodeQualityScanFormValues>({
@@ -43,6 +43,17 @@ const CodeQualityScanForm: React.FC<CodeQualityScanFormProps> = ({
     },
   });
 
+  const {
+    formState: { errors },
+  } = form;
+
+  const getFieldError = (field: string) => {
+    return (
+      errors[field as keyof CodeQualityScanFormValues]?.message ||
+      serverErrors?.[field]
+    );
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
@@ -51,11 +62,15 @@ const CodeQualityScanForm: React.FC<CodeQualityScanFormProps> = ({
           name='jobName'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Job Name</FormLabel>
+              <FormLabel className='text-foreground'>Job Name</FormLabel>
               <FormControl>
-                <Input placeholder='Enter job name' {...field} />
+                <Input
+                  placeholder='Enter job name'
+                  {...field}
+                  className={getFieldError('jobName') ? 'border-red-500' : ''}
+                />
               </FormControl>
-              <FormMessage>{errors?.jobName}</FormMessage>
+              <FormMessage>{getFieldError('jobName')}</FormMessage>
             </FormItem>
           )}
         />
@@ -64,11 +79,18 @@ const CodeQualityScanForm: React.FC<CodeQualityScanFormProps> = ({
           name='gitUrl'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Git URL</FormLabel>
+              <FormLabel className='text-foreground' htmlFor='gitUrl'>
+                Git URL
+              </FormLabel>
               <FormControl>
-                <Input placeholder='Enter Git URL' {...field} />
+                <Input
+                  id='gitUrl'
+                  {...field}
+                  className={getFieldError('gitUrl') ? 'border-red-500' : ''}
+                  placeholder='Enter Git URL'
+                />
               </FormControl>
-              <FormMessage>{errors?.gitUrl}</FormMessage>
+              <FormMessage>{getFieldError('gitUrl')}</FormMessage>
             </FormItem>
           )}
         />
@@ -77,11 +99,17 @@ const CodeQualityScanForm: React.FC<CodeQualityScanFormProps> = ({
           name='buildPath'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Build Path</FormLabel>
+              <FormLabel className='text-foreground' htmlFor='buildPath'>
+                Build Path
+              </FormLabel>
               <FormControl>
-                <Input placeholder='Enter build path' {...field} />
+                <Input
+                  placeholder='Enter build path'
+                  {...field}
+                  className={getFieldError('buildPath') ? 'border-red-500' : ''}
+                />
               </FormControl>
-              <FormMessage>{errors?.buildPath}</FormMessage>
+              <FormMessage>{getFieldError('buildPath')}</FormMessage>
             </FormItem>
           )}
         />
