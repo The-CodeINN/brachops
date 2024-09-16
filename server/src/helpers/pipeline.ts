@@ -87,47 +87,63 @@ spec:
         }
       }
     }
-  `.trim();
 
-  const dotNetCorePipeline = `
-    stage('Deploy Web App To Kubernetes') {
-      steps {
-        withCredentials([ string(credentialsId: 'my_kubernetes', variable: 'api_token') ]) {
-          script {
+`.trim();
+
+const dotNetCorePipeline = `
+  stage('Deploy Web App To Kubernetes') {
+    steps {
+      withCredentials([string(credentialsId: 'my_kubernetes', variable: 'api_token')]) {
+        script {
+          try {
             sh '''
+              set -e
               ${envVarsScript}
               echo 'Generating dynamic deployment.yaml for Kubernetes'
               cat << EOF > deployment.yaml
 ${deploymentYaml}
 EOF
+              echo 'Deployment YAML:'
+              cat deployment.yaml
               echo 'Deploying ${imageName} to Minikube'
               kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f deployment.yaml
               kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f service.yaml
+              echo 'Deployment completed successfully'
             '''
+          } catch (Exception e) {
+            echo 'Deployment failed: ' + e.message
+            sh '''
+              echo 'Describing deployment:'
+              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true describe deployment ${sanitizedProjectType}-app
+              echo 'Fetching logs:'
+              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true logs deployment/${sanitizedProjectType}-app
+            '''
+            throw e
           }
         }
       }
     }
-  `.trim();
+  }
+`.trim();
 
-  const nodeJsPipeline = `
-    stage('Run Node.js Container') {
-      steps {
-        withCredentials([ string(credentialsId: 'my_kubernetes', variable: 'api_token') ]) {
-          script {
-            withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-              sh '''
-                ${envVarsScript}
-                docker run -d -p 8082:3000 -e NODE_ENV=production \${IMAGE_NAME}
-                tail -f /dev/null
-                docker ps
-              '''
-            }
-          }
+const nodeJsPipeline = `
+stage('Run Node.js Container') {
+  steps {
+    withCredentials([ string(credentialsId: 'my_kubernetes', variable: 'api_token') ]) {
+      script {
+        withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+          sh '''
+            ${envVarsScript}
+            docker run -d -p 8082:3000 -e NODE_ENV=production \${IMAGE_NAME}
+            tail -f /dev/null
+            docker ps
+          '''
         }
       }
     }
-  `.trim();
+  }
+}
+`.trim();
 
   const projectSpecificPipeline = projectType === "DotNetCore" ? dotNetCorePipeline : nodeJsPipeline;
 
