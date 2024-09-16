@@ -62,11 +62,29 @@ const useDeployments = () => {
       },
     });
 
+  const DeleteJob = () =>
+    useMutation({
+      mutationFn: async (jobName: string) => {
+        const response = await DeploymentService.deleteJob(jobName);
+        return response.data;
+      },
+      onSuccess: () => {
+        const queryKey: InvalidateQueryFilters = {
+          queryKey: ['jobsWithBuilds'],
+        };
+        queryClient.invalidateQueries(queryKey);
+      },
+      onError: (error) => {
+        console.error('Job deletion failed:', error);
+      },
+    });
+
   return {
     GetJenkinsInfo,
     GetJobsWithBuilds,
     CreateDeployment,
     CreateScanDeployment,
+    DeleteJob,
   };
 };
 

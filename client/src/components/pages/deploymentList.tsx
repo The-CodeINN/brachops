@@ -2,23 +2,31 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Clock } from 'lucide-react';
+import { Check, X, Clock, Trash2 } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 import { JobWithBuilds } from '@/types';
+import { Button } from '../ui/button';
 
 interface DeploymentListProps {
   isLoading: boolean;
   jobs?: JobWithBuilds[];
+  onDelete: (jobName: string) => void;
 }
 
 export const DeploymentList: React.FC<DeploymentListProps> = ({
   isLoading,
   jobs,
+  onDelete,
 }) => {
   const navigate = useNavigate();
 
   const handleDeploymentClick = (name: string) => {
     navigate(`/deployment/${encodeURIComponent(name)}`);
+  };
+
+  const handleDelete = (e: React.MouseEvent, jobName: string) => {
+    e.stopPropagation();
+    onDelete(jobName);
   };
 
   const statusConfig: Record<
@@ -96,6 +104,13 @@ export const DeploymentList: React.FC<DeploymentListProps> = ({
                     <Badge className={statusConfig[status]?.className || ''}>
                       {statusConfig[status]?.label || 'Unknown'}
                     </Badge>
+                    <Button
+                      variant='destructive'
+                      size='sm'
+                      onClick={(e) => handleDelete(e, job.name)}
+                    >
+                      <Trash2 className='w-4 h-4' />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
