@@ -21,7 +21,7 @@ export interface JenkinsInfo {
 }
 
 export interface DeploymentResponse {
-  data: JenkinsInfo;
+  data: JenkinsInfo | object;
   message: string;
   status: string;
 }
@@ -43,4 +43,30 @@ export interface Build {
   result: string;
   duration: number;
   url: string;
+}
+
+export interface CreateJobInput {
+  jobName: string;
+  imageName: string;
+  projectType: '.NET Core' | 'Node.js';
+  envVars: Record<string, string>;
+}
+
+export interface CreateScanJobInput {
+  jobName: string;
+  gitUrl: string;
+  buildPath: string;
+}
+
+export interface BackendError {
+  path: string;
+  message: string;
+}
+
+export interface BackendErrorResponse {
+  status: string;
+  message: string;
+  errors: {
+    details: BackendError[];
+  };
 }
