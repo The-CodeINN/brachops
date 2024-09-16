@@ -157,7 +157,7 @@ export const createJenkinsJobHandler = async (
     await jenkinsService.createJenkinsJob(editedName, xml);
 
     // Trigger the build
-    const buildResult = await jenkinsService.triggerJob(editedName);
+    await jenkinsService.triggerJob(editedName);
 
     // Return success response
     res

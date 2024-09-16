@@ -10,7 +10,7 @@ import { QueryProvider } from './lib/queryProvider.tsx';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <Toaster position='top-center' />
+      <Toaster richColors position='top-center' />
       <ThemeProvider defaultTheme='dark' storageKey='vite-ui-theme'>
         <QueryProvider>
           <App />

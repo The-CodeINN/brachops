@@ -14,26 +14,32 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 const codeQualityScanFormSchema = z.object({
-  projectName: z.string().min(1, 'Project name is required'),
-  githubUrl: z.string().url('Invalid GitHub URL'),
-  csprojLocation: z.string().min(1, 'Csproj file location is required'),
+  jobName: z.string().min(1, 'Job name is required'),
+  gitUrl: z.string().url('Invalid Git URL'),
+  buildPath: z.string().min(1, 'Build path is required'),
 });
 
-type CodeQualityScanFormValues = z.infer<typeof codeQualityScanFormSchema>;
+export type CodeQualityScanFormValues = z.infer<
+  typeof codeQualityScanFormSchema
+>;
 
 interface CodeQualityScanFormProps {
   onSubmit: (data: CodeQualityScanFormValues) => void;
+  errors?: Record<string, string>;
+  isLoading: boolean;
 }
 
 const CodeQualityScanForm: React.FC<CodeQualityScanFormProps> = ({
   onSubmit,
+  errors,
+  isLoading,
 }) => {
   const form = useForm<CodeQualityScanFormValues>({
     resolver: zodResolver(codeQualityScanFormSchema),
     defaultValues: {
-      projectName: '',
-      githubUrl: '',
-      csprojLocation: '',
+      jobName: '',
+      gitUrl: '',
+      buildPath: '',
     },
   });
 
@@ -42,48 +48,49 @@ const CodeQualityScanForm: React.FC<CodeQualityScanFormProps> = ({
       <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
         <FormField
           control={form.control}
-          name='projectName'
+          name='jobName'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Project Name</FormLabel>
+              <FormLabel>Job Name</FormLabel>
               <FormControl>
-                <Input placeholder='Enter project name' {...field} />
+                <Input placeholder='Enter job name' {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage>{errors?.jobName}</FormMessage>
             </FormItem>
           )}
         />
         <FormField
           control={form.control}
-          name='githubUrl'
+          name='gitUrl'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>GitHub URL</FormLabel>
+              <FormLabel>Git URL</FormLabel>
               <FormControl>
-                <Input placeholder='Enter GitHub URL' {...field} />
+                <Input placeholder='Enter Git URL' {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage>{errors?.gitUrl}</FormMessage>
             </FormItem>
           )}
         />
         <FormField
           control={form.control}
-          name='csprojLocation'
+          name='buildPath'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Csproj File Location</FormLabel>
+              <FormLabel>Build Path</FormLabel>
               <FormControl>
-                <Input placeholder='Enter Csproj file location' {...field} />
+                <Input placeholder='Enter build path' {...field} />
               </FormControl>
-              <FormMessage />
+              <FormMessage>{errors?.buildPath}</FormMessage>
             </FormItem>
           )}
         />
         <Button
           type='submit'
           className='bg-primary hover:bg-primary/90 text-primary-foreground'
+          disabled={isLoading}
         >
-          Submit Code Quality Scan
+          {isLoading ? 'Submitting...' : 'Submit Code Quality Scan'}
         </Button>
       </form>
     </Form>
