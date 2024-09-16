@@ -26,6 +26,7 @@ const generatePipeline = (imageName: string, projectType: "DotNetCore" | "NodeJs
   const sanitizedProjectType = sanitizeName(projectType);
 
   // Dynamically generate the deployment.yaml content
+  // TODO: Change sanitizedprojecttype-app to jobname-app the job name is the one added by user
   const deploymentYaml = `
 apiVersion: apps/v1
 kind: Deployment
@@ -48,6 +49,24 @@ spec:
         - containerPort: 80
         env: ${envYaml}
   `;
+
+// Dynamically generate the service.yaml content
+const serviceYaml = `
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${sanitizedProjectType}-service
+spec:
+  selector:
+    app: ${sanitizedProjectType}-app
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30000
+  type: NodePort
+`;
 
   // Escape imageName for XML
   const escapedImageName = escapeXML(imageName);
@@ -105,10 +124,20 @@ ${deploymentYaml}
 EOF
               echo 'Deployment YAML:'
               cat deployment.yaml
+
+                echo 'Generating dynamic service.yaml for Kubernetes'
+                cat << EOF > service.yaml
+${serviceYaml}
+EOF
+                echo 'Service YAML:'
+                cat service.yaml
+
               echo 'Deploying ${imageName} to Minikube'
               kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f deployment.yaml
               kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f service.yaml
+              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true wait --for=condition=ready pod -l app=${sanitizedProjectType}-app --timeout=120s
               echo 'Deployment completed successfully'
+              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 
             '''
           } catch (Exception e) {
             echo 'Deployment failed: ' + e.message
