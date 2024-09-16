@@ -7,8 +7,48 @@ const escapeXML = (str: string): string => {
     .replace(/'/g, '&#39;');
 };
 
+const sanitizeName = (name: string): string => {
+  return name.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
+};
 
-const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js", envVars: Record<string, string>): string => {
+const generatePipeline = (imageName: string, projectType: "DotNetCore" | "NodeJs", envVars: Record<string, string>): string => {
+  // Construct the environment variables section for Kubernetes YAML
+  let envYaml = '';
+  if (envVars) {
+    for (const [key, value] of Object.entries(envVars)) {
+      envYaml += `
+        - name: ${key}
+          value: "${value}"
+      `;
+    }
+  }
+
+  const sanitizedProjectType = sanitizeName(projectType);
+
+  // Dynamically generate the deployment.yaml content
+  const deploymentYaml = `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${sanitizedProjectType}-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${sanitizedProjectType}-app
+  template:
+    metadata:
+      labels:
+        app: ${sanitizedProjectType}-app
+    spec:
+      containers:
+      - name: ${sanitizedProjectType}-container
+        image: ${imageName}
+        ports:
+        - containerPort: 80
+        env: ${envYaml}
+  `;
+
   // Escape imageName for XML
   const escapedImageName = escapeXML(imageName);
 
@@ -48,7 +88,7 @@ const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js
       }
     }
   `.trim();
-  // Please note this script does not work as expected, it is just a placeholder
+
   const dotNetCorePipeline = `
     stage('Deploy Web App To Kubernetes') {
       steps {
@@ -56,9 +96,13 @@ const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js
           script {
             sh '''
               ${envVarsScript}
-              cd ..
-              envsubst < deployment.yaml | kubectl --token $api_token --server http://127.0.0.1:43113 --insecure-skip-tls-verify=true apply -f -
-              envsubst < service.yaml | kubectl --token $api_token --server http://127.0.0.1:43113 --insecure-skip-tls-verify=true apply -f -
+              echo 'Generating dynamic deployment.yaml for Kubernetes'
+              cat << EOF > deployment.yaml
+${deploymentYaml}
+EOF
+              echo 'Deploying ${imageName} to Minikube'
+              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f deployment.yaml
+              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f service.yaml
             '''
           }
         }
@@ -66,7 +110,6 @@ const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js
     }
   `.trim();
 
-  // Please note this script does not work as expected, it is just a placeholder
   const nodeJsPipeline = `
     stage('Run Node.js Container') {
       steps {
@@ -77,6 +120,7 @@ const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js
                 ${envVarsScript}
                 docker run -d -p 8082:3000 -e NODE_ENV=production \${IMAGE_NAME}
                 tail -f /dev/null
+                docker ps
               '''
             }
           }
@@ -85,7 +129,7 @@ const generatePipeline = (imageName: string, projectType: ".NET Core" | "Node.js
     }
   `.trim();
 
-  const projectSpecificPipeline = projectType === ".NET Core" ? dotNetCorePipeline : nodeJsPipeline;
+  const projectSpecificPipeline = projectType === "DotNetCore" ? dotNetCorePipeline : nodeJsPipeline;
 
   return `
 pipeline {
@@ -101,6 +145,5 @@ pipeline {
 }
   `.trim();
 };
-
 
 export { generatePipeline };
