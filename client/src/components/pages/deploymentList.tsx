@@ -80,7 +80,7 @@ export const DeploymentList: React.FC<DeploymentListProps> = ({
             return (
               <Card
                 key={job.name}
-                className='hover:shadow-md transition-shadow cursor-pointer dark:bg-[#0a0a0a] dark:hover:shadow-lg'
+                className='hover:shadow-md cursor-pointer dark:bg-[#0a0a0a] dark:hover:shadow-lg transform transition-colors duration-200 ease-in-out'
                 onClick={() => handleDeploymentClick(job.name)}
               >
                 <CardContent className='flex items-center justify-between p-4'>
