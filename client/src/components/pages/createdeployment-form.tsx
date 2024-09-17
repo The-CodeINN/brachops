@@ -117,6 +117,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                 <SelectContent>
                   <SelectItem value='DotNetCore'>.NET Core</SelectItem>
                   <SelectItem value='NodeJs'>Node.js</SelectItem>
+                  <SelectItem value='DotNetCore'>.NET Core</SelectItem>
+                  <SelectItem value='NodeJs'>Node.js</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage>{getFieldError('projectType')}</FormMessage>

@@ -13,6 +13,9 @@ import {
 import { createSuccessResponse } from "$/utils/apiResponse";
 import { pollQueueForBuildNumber } from "$/helpers/pollQueueForBuildNumber";
 import { pollBuildStatus } from "$/helpers/pollBuildStatus";
+import path, { resolve } from "path";
+import fs from 'fs';
+import { spawn } from 'child_process';
 
 interface JobInfo {
   name: string;
@@ -62,6 +65,63 @@ interface BuildInfo {
   duration: number;
   parameters?: any;
 }
+
+const sanitizeName = (name: string): string => {
+  // Remove non-alphanumeric characters and convert to lowercase
+  let sanitized = name.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
+  
+  // Remove the 'deploy-' prefix if it exists
+  if (sanitized.startsWith('deploy-')) {
+    sanitized = sanitized.substring(7);
+  }
+  
+  return sanitized;
+};
+
+const validateFilePath = (filePath: string): string => {
+  // Ensure the path is resolved relative to a known safe directory
+  const resolvedPath = path.resolve(filePath);
+
+  // check if the resolved path is within a specific directory to prevent directory traversal
+  const allowedDirectory = path.resolve('/tmp'); // only allow access to /tmp
+  if (!resolvedPath.startsWith(allowedDirectory)) {
+    throw new Error('Invalid file path');
+  }
+
+  return resolvedPath;
+};
+
+
+const deleteNamespace = async (namespace: string): Promise<void> => {
+return new Promise((resolve, reject) => {
+  const kubectlProcess = spawn('kubectl', ['delete', 'namespace', namespace])
+
+  kubectlProcess.stdout.on('data', (data) => {
+    console.log(`Namespace deletion stdout: ${data}`)
+  })
+
+  kubectlProcess.stderr.on('data', (data) => {
+    console.warn(`Namespace deletion stderr: ${data}`);
+  });
+
+  kubectlProcess.on('close', (code) => {
+    if (code === 0) {
+      resolve();
+    } else {
+      reject(new Error(`kubectl delete namespace process exited with code ${code}`));
+    }
+  });
+})
+};
+
+const deleteJenkinsJob = async (jobName: string) => {
+  try {
+    await jenkinsService.deleteJob(jobName);
+  } catch (error) {
+    log.error(`Error deleting Jenkins job: ${error}`);
+    throw error;
+  }
+};
 
 // Get Jenkins info
 export const getJenkinsInfoHandler = async (req: Request, res: Response, next: NextFunction) => {
@@ -150,7 +210,7 @@ export const createJenkinsJobHandler = async (
     }
 
     // Generate pipeline script and XML configuration
-    const pipelineScript = generatePipeline(imageName, projectType, envVars);
+    const pipelineScript = generatePipeline(imageName, projectType, envVars, jobName);
     const xml = createJenkinsJobXML(pipelineScript);
 
     // Create Jenkins job
@@ -168,6 +228,27 @@ export const createJenkinsJobHandler = async (
     next(error);
   }
 };
+
+export const getDeploymentStatus = (req: Request, res: Response, next: NextFunction) => {
+  try{
+  const { jobName } = req.params;
+  const sanitizedJobName = sanitizeName(jobName);
+  const filePath = validateFilePath(path.join('/tmp', `${sanitizedJobName}_url.txt`));
+  log.info(`Checking for app URL at: ${filePath}`);
+  
+  if (fs.existsSync(filePath)) {
+    const appUrl = fs.readFileSync(filePath, 'utf8').trim();
+    log.info(`App URL found: ${appUrl}`);
+    res.json({ status: 'completed', appUrl });
+  } else {
+    log.info('App URL not found, deployment in progress');
+    res.json({ status: 'in-progress' });
+  }} catch(error){
+
+    log.error(`Error checking deployment status: ${error}`)
+  }
+};
+
 
 export const stopBuildHandler = async (
   req: Request<GetBuildStatusInput["params"]>,
@@ -262,8 +343,15 @@ export const deleteJobHandler = async (
 ) => {
   try {
     const { jobName } = req.params;
-    await jenkinsService.deleteJob(jobName);
-    res.json(createSuccessResponse({}, `Job ${jobName} deleted successfully`));
+    const namespace = sanitizeName(jobName); // Remove the deploy- prefix if present
+    
+    // Delete Jenkins job
+    await deleteJenkinsJob(jobName);
+
+    // Delete K8s namespace
+    await deleteNamespace(namespace);
+
+    res.json(createSuccessResponse({}, `Job ${jobName} and associated Kubernetes resources deleted successfully`));
   } catch (error) {
     log.error(error);
     next(error);
