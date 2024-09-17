@@ -13,10 +13,9 @@ import {
 import { createSuccessResponse } from "$/utils/apiResponse";
 import { pollQueueForBuildNumber } from "$/helpers/pollQueueForBuildNumber";
 import { pollBuildStatus } from "$/helpers/pollBuildStatus";
-import { exec } from "child_process";
-import util from 'util';
-import path from "path";
+import path, { resolve } from "path";
 import fs from 'fs';
+import { spawn } from 'child_process';
 
 interface JobInfo {
   name: string;
@@ -79,21 +78,40 @@ const sanitizeName = (name: string): string => {
   return sanitized;
 };
 
-const execPromise = util.promisify(exec);
+const validateFilePath = (filePath: string): string => {
+  // Ensure the path is resolved relative to a known safe directory
+  const resolvedPath = path.resolve(filePath);
 
-const deleteNamespace = async (namespace: string) => {
-  try {
-    const { stdout, stderr } = await execPromise(`kubectl delete namespace ${namespace}`);
-    if (stdout) {
-      log.info(`Namespace deletion stdout: ${stdout}`);
-    }
-    if (stderr) {
-      log.warn(`Namespace deletion stderr: ${stderr}`);
-    }
-  } catch (error) {
-    log.error(`Error deleting namespace: ${error}`);
-    throw error;
+  // check if the resolved path is within a specific directory to prevent directory traversal
+  const allowedDirectory = path.resolve('/tmp'); // only allow access to /tmp
+  if (!resolvedPath.startsWith(allowedDirectory)) {
+    throw new Error('Invalid file path');
   }
+
+  return resolvedPath;
+};
+
+
+const deleteNamespace = async (namespace: string): Promise<void> => {
+return new Promise((resolve, reject) => {
+  const kubectlProcess = spawn('kubectl', ['delete', 'namespace', namespace])
+
+  kubectlProcess.stdout.on('data', (data) => {
+    console.log(`Namespace deletion stdout: ${data}`)
+  })
+
+  kubectlProcess.stderr.on('data', (data) => {
+    console.warn(`Namespace deletion stderr: ${data}`);
+  });
+
+  kubectlProcess.on('close', (code) => {
+    if (code === 0) {
+      resolve();
+    } else {
+      reject(new Error(`kubectl delete namespace process exited with code ${code}`));
+    }
+  });
+})
 };
 
 const deleteJenkinsJob = async (jobName: string) => {
@@ -215,7 +233,7 @@ export const getDeploymentStatus = (req: Request, res: Response, next: NextFunct
   try{
   const { jobName } = req.params;
   const sanitizedJobName = sanitizeName(jobName);
-  const filePath = path.join('/tmp', `${sanitizedJobName}_url.txt`);
+  const filePath = validateFilePath(path.join('/tmp', `${sanitizedJobName}_url.txt`));
   log.info(`Checking for app URL at: ${filePath}`);
   
   if (fs.existsSync(filePath)) {
