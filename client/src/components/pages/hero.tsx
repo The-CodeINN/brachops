@@ -1,4 +1,4 @@
-import { ArrowRightIcon, ShieldCheckIcon } from 'lucide-react';
+import { Rocket, ShieldCheckIcon } from 'lucide-react';
 import AnimatedGradientText from '../ui/animated-gradient-text';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
@@ -41,7 +41,7 @@ function Hero() {
               variant={'default'}
             >
               <span>Deploy Now </span>
-              <ArrowRightIcon className='ml-1 size-4 transition-transform duration-300 ease-in-out group-hover:translate-x-1' />
+              <Rocket className='ml-1 size-4 transition-transform duration-300 ease-in-out group-hover:translate-x-1' />
             </Button>
           </Link>
           <Link to='/codescan'>

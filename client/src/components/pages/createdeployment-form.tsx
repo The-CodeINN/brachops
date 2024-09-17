@@ -23,7 +23,7 @@ import { Plus, Minus } from 'lucide-react';
 
 const deploymentFormSchema = z.object({
   jobName: z.string().min(1, 'Job name is required'),
-  projectType: z.enum(['.NET Core', 'Node.js'], {
+  projectType: z.enum(['DotNetCore', 'NodeJs'], {
     required_error: 'Project type is required',
   }),
   imageName: z.string().min(1, 'Image name is required'),
@@ -115,8 +115,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value='.NET Core'>.NET Core</SelectItem>
-                  <SelectItem value='Node.js'>Node.js</SelectItem>
+                  <SelectItem value='DotNetCore'>.NET Core</SelectItem>
+                  <SelectItem value='NodeJs'>Node.js</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage>{getFieldError('projectType')}</FormMessage>
