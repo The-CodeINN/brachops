@@ -15,6 +15,8 @@ import { pollQueueForBuildNumber } from "$/helpers/pollQueueForBuildNumber";
 import { pollBuildStatus } from "$/helpers/pollBuildStatus";
 import { exec } from "child_process";
 import util from 'util';
+import path from "path";
+import fs from 'fs';
 
 interface JobInfo {
   name: string;
@@ -208,6 +210,27 @@ export const createJenkinsJobHandler = async (
     next(error);
   }
 };
+
+export const getDeploymentStatus = (req: Request, res: Response, next: NextFunction) => {
+  try{
+  const { jobName } = req.params;
+  const sanitizedJobName = sanitizeName(jobName);
+  const filePath = path.join('/tmp', `${sanitizedJobName}_url.txt`);
+  log.info(`Checking for app URL at: ${filePath}`);
+  
+  if (fs.existsSync(filePath)) {
+    const appUrl = fs.readFileSync(filePath, 'utf8').trim();
+    log.info(`App URL found: ${appUrl}`);
+    res.json({ status: 'completed', appUrl });
+  } else {
+    log.info('App URL not found, deployment in progress');
+    res.json({ status: 'in-progress' });
+  }} catch(error){
+
+    log.error(`Error checking deployment status: ${error}`)
+  }
+};
+
 
 export const stopBuildHandler = async (
   req: Request<GetBuildStatusInput["params"]>,

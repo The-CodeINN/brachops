@@ -32,6 +32,12 @@ export const routes = (app: Application) => {
     jenkinsController.getBuildStatusHandler
   ); // http://localhost:3000/jenkins/job/MyJob/build/1
 
+  // Get deployment status
+  app.get(
+    "/jenkins/deployment-status/:jobName",
+    jenkinsController.getDeploymentStatus
+  ); // http://localhost:3000/jenkins/deployment-status/MyJob
+
   // Create a Jenkins job and trigger it
   app.post(
     "/jenkins/job",
