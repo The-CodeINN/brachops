@@ -15,6 +15,7 @@ import {
   BackendErrorResponse,
 } from '@/types';
 import { toast } from 'sonner';
+import { AxiosError } from 'axios';
 
 const CreateDeploymentOrScanJob: React.FC = () => {
   const navigate = useNavigate();
@@ -36,33 +37,37 @@ const CreateDeploymentOrScanJob: React.FC = () => {
   };
 
   const handleError = (error: unknown) => {
-    if (error && typeof error === 'object' && 'response' in error) {
-      const axiosError = error as { response?: { data: BackendErrorResponse } };
-      if (axiosError.response?.data) {
-        const backendErrors = axiosError.response.data.errors.details;
-        const formattedErrors: Record<string, string> = {};
-        backendErrors.forEach((err) => {
+    let errorMessage = 'An unexpected error occurred';
+    const formattedErrors: Record<string, string> = {};
+
+    if (error instanceof AxiosError && error.response?.data) {
+      const backendError = error.response.data as BackendErrorResponse;
+
+      if (backendError.errors?.details) {
+        backendError.errors.details.forEach((err) => {
           const field = err.path.split('.').pop() as string;
           formattedErrors[field] = err.message;
         });
-        setFormErrors(formattedErrors);
-        toast.error(
-          `Failed to create ${activeTab.toLowerCase()} job. Please check the form for errors.`
-        );
+        errorMessage =
+          backendError.message || 'Please check the form for errors.';
       } else {
-        setFormErrors({ general: 'An unexpected error occurred' });
-        toast.error('An unexpected error occurred');
+        errorMessage = backendError.message;
       }
-    } else {
-      setFormErrors({ general: 'An unexpected error occurred' });
-      toast.error('An unexpected error occurred');
+      formattedErrors.general = errorMessage;
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+      formattedErrors.general = errorMessage;
     }
-  };
 
-  const handleSuccess = () => {
+    setFormErrors(formattedErrors);
+    // console.error(error.response?.data || error.message, "Error creating job");
+    // @ts-expect-error - Needed
+    toast.error(`${error.response.data.error}`);
+  };
+  const handleSuccess = (jobName: string) => {
     setFormErrors({});
     toast.success(`${activeTab} job created successfully!`);
-    navigate('/deployments');
+    navigate(`/deployment/${jobName}/1`);
   };
 
   const onDeploymentSubmit = (formData: DeploymentFormValues) => {
@@ -77,7 +82,7 @@ const CreateDeploymentOrScanJob: React.FC = () => {
 
     createDeploymentMutation.mutate(createJobInput, {
       onError: handleError,
-      onSuccess: handleSuccess,
+      onSuccess: () => handleSuccess(createJobInput.jobName),
     });
   };
 
@@ -90,7 +95,7 @@ const CreateDeploymentOrScanJob: React.FC = () => {
 
     createScanDeploymentMutation.mutate(createScanJobInput, {
       onError: handleError,
-      onSuccess: handleSuccess,
+      onSuccess: () => handleSuccess(createScanJobInput.jobName),
     });
   };
 
