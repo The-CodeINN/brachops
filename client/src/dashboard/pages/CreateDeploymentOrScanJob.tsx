@@ -1,25 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import IconTabs from '@/components/ui/Tab';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import IconTabs from "@/components/ui/Tab";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DeploymentForm, {
   DeploymentFormValues,
-} from '@/components/pages/createdeployment-form';
+} from "@/components/pages/createdeployment-form";
 import CodeQualityScanForm, {
   CodeQualityScanFormValues,
-} from '@/components/pages/codescan-form';
-import { useDeployments } from '@/queriesAndMutations';
+} from "@/components/pages/codescan-form";
+import { useDeployments } from "@/queriesAndMutations";
 import {
   CreateJobInput,
   CreateScanJobInput,
   BackendErrorResponse,
-} from '@/types';
-import { toast } from 'sonner';
+} from "@/types";
+import { toast } from "sonner";
+import { AxiosError } from "axios";
 
 const CreateDeploymentOrScanJob: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('Deployment');
+  const [activeTab, setActiveTab] = useState("Deployment");
   const { CreateDeployment, CreateScanDeployment } = useDeployments();
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -27,42 +28,47 @@ const CreateDeploymentOrScanJob: React.FC = () => {
   const createScanDeploymentMutation = CreateScanDeployment();
 
   useEffect(() => {
-    setActiveTab(location.pathname === '/codescan' ? 'CodeScan' : 'Deployment');
+    setActiveTab(location.pathname === "/codescan" ? "CodeScan" : "Deployment");
   }, [location.pathname]);
 
   const handleTabChange = (tab: { title: string }) => {
     setActiveTab(tab.title);
-    navigate(tab.title === 'Deployment' ? '/deploy' : '/codescan');
+    navigate(tab.title === "Deployment" ? "/deploy" : "/codescan");
   };
 
   const handleError = (error: unknown) => {
-    if (error && typeof error === 'object' && 'response' in error) {
-      const axiosError = error as { response?: { data: BackendErrorResponse } };
-      if (axiosError.response?.data) {
-        const backendErrors = axiosError.response.data.errors.details;
-        const formattedErrors: Record<string, string> = {};
-        backendErrors.forEach((err) => {
-          const field = err.path.split('.').pop() as string;
+    let errorMessage = "An unexpected error occurred";
+    const formattedErrors: Record<string, string> = {};
+
+    if (error instanceof AxiosError && error.response?.data) {
+      const backendError = error.response.data as BackendErrorResponse;
+
+      if (backendError.errors?.details) {
+        backendError.errors.details.forEach((err) => {
+          const field = err.path.split(".").pop() as string;
           formattedErrors[field] = err.message;
         });
-        setFormErrors(formattedErrors);
-        toast.error(
-          `Failed to create ${activeTab.toLowerCase()} job. Please check the form for errors.`
-        );
+        errorMessage =
+          backendError.message || "Please check the form for errors.";
       } else {
-        setFormErrors({ general: 'An unexpected error occurred' });
-        toast.error('An unexpected error occurred');
+        errorMessage = backendError.message;
       }
-    } else {
-      setFormErrors({ general: 'An unexpected error occurred' });
-      toast.error('An unexpected error occurred');
+      formattedErrors.general = errorMessage;
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+      formattedErrors.general = errorMessage;
     }
+
+    setFormErrors(formattedErrors);
+    // console.error(error.response?.data || error.message, "Error creating job");
+    // @ts-expect-error
+    toast.error(`${error.response.data.error}`);
   };
 
   const handleSuccess = () => {
     setFormErrors({});
     toast.success(`${activeTab} job created successfully!`);
-    navigate('/deployments');
+    navigate("/deployments");
   };
 
   const onDeploymentSubmit = (formData: DeploymentFormValues) => {
@@ -95,28 +101,30 @@ const CreateDeploymentOrScanJob: React.FC = () => {
   };
 
   return (
-    <div className='container mx-auto px-4 py-8'>
+    <div className="container mx-auto px-4 py-8">
       <IconTabs onTabChange={handleTabChange} selectedTab={activeTab} />
-      <Card className='mt-6'>
+      <Card className="mt-6">
         <CardHeader>
-          <CardTitle className='text-2xl font-bold'>
-            {activeTab === 'Deployment'
-              ? 'Deployment Job'
-              : 'Code Quality Scan'}
+          <CardTitle className="text-2xl font-bold">
+            {activeTab === "Deployment"
+              ? "Deployment Job"
+              : "Code Quality Scan"}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {activeTab === 'Deployment' ? (
+          {activeTab === "Deployment" ? (
             <DeploymentForm
               onSubmit={onDeploymentSubmit}
               serverErrors={formErrors}
               isLoading={createDeploymentMutation.isPending}
+              isError={createDeploymentMutation.isError}
             />
           ) : (
             <CodeQualityScanForm
               onSubmit={onCodeQualityScanSubmit}
               serverErrors={formErrors}
               isLoading={createScanDeploymentMutation.isPending}
+              // isError={createScanDeploymentMutation.isError}
             />
           )}
         </CardContent>
