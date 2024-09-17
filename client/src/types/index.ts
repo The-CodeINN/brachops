@@ -48,7 +48,7 @@ export interface Build {
 export interface CreateJobInput {
   jobName: string;
   imageName: string;
-  projectType: '.NET Core' | 'Node.js';
+  projectType: 'DotNetCore' | 'NodeJs';
   envVars: Record<string, string>;
 }
 
