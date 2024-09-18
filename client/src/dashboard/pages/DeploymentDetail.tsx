@@ -5,57 +5,56 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, X, Clock, Server, Github, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-interface DeploymentDetail {
-  id: string;
-  name: string;
-  status: 'success' | 'failed' | 'in-progress';
-  timestamp: string;
-  environment: string;
-  commitHash: string;
-  author: string;
-  logs: string[];
-}
-
-const mockDeployments: DeploymentDetail[] = [
-  {
-    id: '1',
-    name: 'Project Alpha v1.2',
-    status: 'success',
-    timestamp: '2024-09-13 14:30:00',
-    environment: 'Production',
-    commitHash: 'a1b2c3d',
-    author: 'Jane Doe',
-    logs: [
-      '[14:30:00] Deployment started',
-      '[14:30:05] Pulling latest changes',
-      '[14:30:10] Building application',
-      '[14:30:30] Running tests',
-      '[14:30:45] Deploying to production servers',
-      '[14:31:00] Deployment completed successfully',
-    ],
-  },
-  // Add more mock deployments as needed
-];
+import { useDeployments } from '@/queriesAndMutations';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const statusConfig = {
-  success: {
+  SUCCESS: {
     icon: Check,
     className: 'text-green-500 bg-green-100 dark:bg-green-900',
   },
-  failed: { icon: X, className: 'text-red-500 bg-red-100 dark:bg-red-900' },
-  'in-progress': {
+  FAILURE: { icon: X, className: 'text-red-500 bg-red-100 dark:bg-red-900' },
+  IN_PROGRESS: {
     icon: Clock,
     className: 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900',
   },
 };
 
 export const DeploymentDetails: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { jobName, buildId } = useParams<{
+    jobName: string;
+    buildId: string;
+  }>();
+  console.log('jobName:', jobName, 'buildId:', buildId);
   const navigate = useNavigate();
-  const deployment = mockDeployments.find((d) => d.id === id);
+  const { GetBuildDetails, GetDeploymentBuildStatus } = useDeployments();
 
-  if (!deployment) {
+  const {
+    data: buildDetailsResponse,
+    isLoading: isBuildDetailsLoading,
+    error: buildDetailsError,
+  } = GetBuildDetails(jobName || '', buildId || '');
+
+  const {
+    data: buildStatusResponse,
+    isLoading: isBuildStatusLoading,
+    error: buildStatusError,
+  } = GetDeploymentBuildStatus(jobName || '');
+
+  if (isBuildDetailsLoading || isBuildStatusLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (buildDetailsError || buildStatusError) {
+    return (
+      <ErrorDisplay
+        error={buildDetailsError}
+        onBack={() => navigate('/deployments')}
+      />
+    );
+  }
+
+  if (!buildDetailsResponse?.data || !buildStatusResponse) {
     return (
       <div className='container mx-auto px-2 py-8 space-y-8'>
         <h1 className='text-3xl font-bold'>Deployment Not Found</h1>
@@ -67,6 +66,19 @@ export const DeploymentDetails: React.FC = () => {
     );
   }
 
+  const details = buildDetailsResponse.data;
+  const buildStatus = buildStatusResponse;
+
+  // Dummy data for missing fields
+  const dummyStatus = {
+    result: details.result,
+    timestamp: new Date().toISOString(),
+    builtOn: 'Jenkins Server 1',
+    commitHash: 'abc123',
+    author: 'John Doe',
+    logs: ['Log entry 1', 'Log entry 2', 'Log entry 3'],
+  };
+
   return (
     <div className='container mx-auto px-2 py-8 space-y-8'>
       <h1 className='text-3xl font-bold'>Deployment Details</h1>
@@ -74,24 +86,21 @@ export const DeploymentDetails: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className='flex items-center justify-between'>
-            <span>{deployment.name}</span>
+            <span>{details.fullDisplayName}</span>
             <Badge
               className={
-                deployment.status === 'success'
-                  ? 'text-green-500 bg-green-100 dark:bg-green-900'
-                  : deployment.status === 'failed'
-                  ? 'text-red-500 bg-red-100 dark:bg-red-900'
-                  : 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900'
+                statusConfig[details.result as keyof typeof statusConfig]
+                  ?.className
               }
               variant={
-                deployment.status === 'success'
+                details.result === 'SUCCESS'
                   ? 'default'
-                  : deployment.status === 'failed'
+                  : details.result === 'FAILURE'
                   ? 'destructive'
                   : 'secondary'
               }
             >
-              {deployment.status}
+              {details.result}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -99,31 +108,36 @@ export const DeploymentDetails: React.FC = () => {
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
             <div className='flex items-center space-x-2'>
               <Clock className='text-muted-foreground' size={20} />
-              <span>{deployment.timestamp}</span>
+              <span>{new Date(dummyStatus.timestamp).toLocaleString()}</span>
             </div>
             <div className='flex items-center space-x-2'>
               <Server className='text-muted-foreground' size={20} />
-              <span>{deployment.environment}</span>
+              <span>{dummyStatus.builtOn}</span>
             </div>
             <div className='flex items-center space-x-2'>
               <Github className='text-muted-foreground' size={20} />
-              <span>{deployment.commitHash}</span>
+              <span>{dummyStatus.commitHash}</span>
             </div>
             <div className='flex items-center space-x-2'>
               <User className='text-muted-foreground' size={20} />
-              <span>{deployment.author}</span>
+              <span>{dummyStatus.author}</span>
             </div>
             <div className='flex items-center space-x-2'>
               <div
                 className={`p-2 rounded-full ${
-                  statusConfig[deployment.status].className
+                  statusConfig[details.result as keyof typeof statusConfig]
+                    ?.className
                 }`}
               >
-                {React.createElement(statusConfig[deployment.status].icon, {
-                  size: 20,
-                })}
+                {React.createElement(
+                  statusConfig[details.result as keyof typeof statusConfig]
+                    ?.icon,
+                  {
+                    size: 20,
+                  }
+                )}
               </div>
-              <span>{deployment.status}</span>
+              <span>{details.result}</span>
             </div>
           </div>
         </CardContent>
@@ -131,14 +145,14 @@ export const DeploymentDetails: React.FC = () => {
 
       <Tabs defaultValue='logs'>
         <TabsList>
-          <TabsTrigger value='logs'>Deployment Logs</TabsTrigger>
           <TabsTrigger value='summary'>Summary</TabsTrigger>
+          <TabsTrigger value='logs'>Deployment Logs</TabsTrigger>
         </TabsList>
         <TabsContent value='logs'>
           <Card>
             <CardContent className='p-4'>
               <pre className='bg-muted p-4 rounded-md overflow-x-auto'>
-                {deployment.logs.map((log, index) => (
+                {dummyStatus.logs.map((log: string, index: number) => (
                   <div key={index} className='font-mono text-sm'>
                     {log}
                   </div>
@@ -151,7 +165,25 @@ export const DeploymentDetails: React.FC = () => {
           <Card>
             <CardContent className='p-4'>
               <p>
-                Deployment summary and additional details can be added here.
+                Build Number: {details.number}
+                <br />
+                Result: {details.result}
+                <br />
+                Duration: {details.duration / 1000} seconds
+                <br />
+              </p>
+              <h3 className='text-lg font-semibold mt-6'>Build Status</h3>
+              <p>
+                Deployment Name: {buildStatus.status}
+                <br />
+                URL:
+                <a
+                  href={buildStatus.appUrl}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  {buildStatus.appUrl}
+                </a>
               </p>
             </CardContent>
           </Card>
@@ -160,5 +192,37 @@ export const DeploymentDetails: React.FC = () => {
     </div>
   );
 };
+
+const LoadingSkeleton: React.FC = () => (
+  <div className='container mx-auto px-2 py-8 space-y-8'>
+    <Skeleton className='h-10 w-1/4' />
+    <Card>
+      <CardHeader>
+        <Skeleton className='h-6 w-3/4' />
+      </CardHeader>
+      <CardContent>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+          {[...Array(5)].map((_, index) => (
+            <Skeleton key={index} className='h-6 w-full' />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+    <Skeleton className='h-40 w-full' />
+  </div>
+);
+
+interface ErrorDisplayProps {
+  error: Error | null;
+  onBack: () => void;
+}
+
+const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onBack }) => (
+  <div className='container mx-auto px-2 py-8 space-y-8'>
+    <h1 className='text-3xl font-bold'>Error</h1>
+    <p>An error occurred while fetching deployment details: {error?.message}</p>
+    <Button onClick={onBack}>Back to Deployments</Button>
+  </div>
+);
 
 export default DeploymentDetails;

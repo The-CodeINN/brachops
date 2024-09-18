@@ -64,10 +64,11 @@ const CreateDeploymentOrScanJob: React.FC = () => {
     // @ts-expect-error - Needed
     toast.error(`${error.response.data.error}`);
   };
-  const handleSuccess = (jobName: string) => {
+  const handleSuccess = () => {
     setFormErrors({});
     toast.success(`${activeTab} job created successfully!`);
-    navigate(`/deployment/${jobName}/1`);
+    // navigate(`/deployment/${jobName}/1`);
+    navigate(`/deployments`);
   };
 
   const onDeploymentSubmit = (formData: DeploymentFormValues) => {
@@ -82,7 +83,7 @@ const CreateDeploymentOrScanJob: React.FC = () => {
 
     createDeploymentMutation.mutate(createJobInput, {
       onError: handleError,
-      onSuccess: () => handleSuccess(createJobInput.jobName),
+      onSuccess: () => handleSuccess(),
     });
   };
 
@@ -95,7 +96,7 @@ const CreateDeploymentOrScanJob: React.FC = () => {
 
     createScanDeploymentMutation.mutate(createScanJobInput, {
       onError: handleError,
-      onSuccess: () => handleSuccess(createScanJobInput.jobName),
+      onSuccess: () => handleSuccess(),
     });
   };
 

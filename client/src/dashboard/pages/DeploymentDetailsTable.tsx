@@ -40,7 +40,8 @@ const DeploymentDetailsTable = () => {
 
   const handleViewDetails = (buildId: string) => {
     if (name) {
-      navigate(`/deployment/${encodeURIComponent(name)}/${buildId}`);
+      const encodedJobName = encodeURIComponent(name);
+      navigate(`/deployment/${encodedJobName}/${buildId}`);
     }
   };
 
