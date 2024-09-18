@@ -427,7 +427,7 @@ export const handleSonarQubeWebhook = async (req: Request, res: Response) => {
     console.log("Quality Gate Conditions \n" + JSON.stringify(conditions, null, 2));
 
     // Sending the response after logging
-    res.status(200).send("Scan Analysis Received");
+    return res.json(createSuccessResponse({ payload }, "Scan Analysis Received"));
   } catch (error) {
     log.error(`Error handling SonarQube webhook: ${error}`);
     res.status(500).send("Error handling SonarQube webhook");
