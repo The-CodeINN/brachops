@@ -3,7 +3,7 @@ import { log } from "$/utils/logger";
 import * as jenkinsService from "$/service/jenkinsService";
 import { createJenkinsJobXML } from "$/helpers/configXml";
 import { generatePipeline } from "$/helpers/pipeline";
-import { generateGitPipeline } from "$/helpers/gitPipeline";
+import { ScanCodePipeline } from "$/helpers/ScanCodePipeline";
 import {
   type GetBuildStatusInput,
   type CheckJobExistsInput,
@@ -199,23 +199,22 @@ export const createJenkinsJobHandler = async (
   try {
     // Validate input
     const { jobName, imageName, projectType, envVars } = req.body;
-    const editedName = "deploy-" + jobName;
     console.log(req.body);
 
     // Check if job already exists
-    if (await jenkinsService.checkJobExists(editedName)) {
+    if (await jenkinsService.checkJobExists(jobName)) {
       return res.status(409).json({ error: `Job ${jobName} already exists` });
     }
 
     // Generate pipeline script and XML configuration
-    const pipelineScript = generatePipeline(imageName, projectType, envVars, jobName);
+    const pipelineScript = generatePipeline(imageName, projectType, envVars ?? {}, jobName);
     const xml = createJenkinsJobXML(pipelineScript);
 
     // Create Jenkins job
-    await jenkinsService.createJenkinsJob(editedName, xml);
+    await jenkinsService.createJenkinsJob(jobName, xml);
 
     // Trigger the build
-    await jenkinsService.triggerJob(editedName);
+    await jenkinsService.triggerJob(jobName);
 
     // Return success response
     res
@@ -274,33 +273,27 @@ export const createScanJobHandler = async (
 ) => {
   try {
     // Validate input
-    const { jobName, gitUrl, buildPath } = req.body;
-    const editedName = "scan-" + jobName;
-    const exists = await jenkinsService.checkJobExists(editedName);
+    const { jobName, gitUrl, buildPath, projectType } = req.body;
+
+    const exists = await jenkinsService.checkJobExists(jobName);
     if (exists) {
       return res.status(409).json({ error: `Job ${jobName} already exists` });
     }
 
     // Generate pipeline script and XML configuration
-    const pipelineScript = generateGitPipeline(editedName, gitUrl, buildPath);
+    const pipelineScript = ScanCodePipeline(jobName, gitUrl, buildPath, projectType);
     const xml = createJenkinsJobXML(pipelineScript);
 
     // Create Jenkins job
-    await jenkinsService.createScanJob(editedName, xml);
+    await jenkinsService.createScanJob(jobName, xml);
 
     // Trigger the build
-    const buildResult = await jenkinsService.triggerJob(editedName);
-
-    // Poll Queue for number
-    const buildNumber = await pollQueueForBuildNumber(buildResult.queueItem);
-    const sonarUrl = await pollBuildStatus(editedName, buildNumber);
+    const buildResult = await jenkinsService.triggerJob(jobName);
 
     // Return success response
     res
       .status(201)
-      .json(
-        createSuccessResponse({ sonarUrl }, `Job ${jobName} created and triggered successfully`)
-      );
+      .json(createSuccessResponse({}, `Job ${jobName} created and triggered successfully`));
   } catch (error) {
     log.error(error);
     next(error);
@@ -398,5 +391,45 @@ export const getJobWithBuildsHandler = async (req: Request, res: Response, next:
   } catch (error) {
     log.error(error);
     next(error);
+  }
+};
+
+export const handleSonarQubeWebhook = async (req: Request, res: Response) => {
+  try {
+    const payload = req.body;
+    if (!payload || !payload.taskId) {
+      log.error("No status found for Scan Analysis payload");
+      return res.status(400).send("Invalid webhook payload");
+    }
+    log.info("Received SonarQube webhook");
+
+    // Extracting details from the payload object
+    const {
+      taskId,
+      status,
+      project: { key: projectKey, name: projectName, url: sonarAnalysisUrl },
+      branch: { isMain },
+      analysedAt,
+      qualityGate: { conditions, status: sonarGateStatus },
+    } = payload;
+
+    //io.sockets.emit('sonarAnalysisUrl', { sonarAnalysisUrl });
+
+    // Logging the details
+    console.log(`Task ID: ${taskId}`);
+    console.log(`Project Status: ${status}`);
+    console.log(`Project Key: ${projectKey}`);
+    console.log(`Project Name: ${projectName}`);
+    console.log(`Is Main Branch: ${isMain}`);
+    console.log(`Sonar URL: ${sonarAnalysisUrl}`);
+    console.log(`Analysed At: ${analysedAt}`);
+    console.log(`Quality Gate Status: ${sonarGateStatus}`);
+    console.log("Quality Gate Conditions \n" + JSON.stringify(conditions, null, 2));
+
+    // Sending the response after logging
+    return res.json(createSuccessResponse({ payload }, "Scan Analysis Received"));
+  } catch (error) {
+    log.error(`Error handling SonarQube webhook: ${error}`);
+    res.status(500).send("Error handling SonarQube webhook");
   }
 };

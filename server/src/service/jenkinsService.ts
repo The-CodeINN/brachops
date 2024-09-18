@@ -77,3 +77,7 @@ export const getQueueItem = async (queueItem: number) => {
 export const getJobWithBuilds = async (jobName: string) => {
   return await customJenkinsClient.getJobInfo(jobName, 1, true);
 };
+
+export const updateJob = async (jobName: string, jobConfigXml: string) => {
+  await jenkins.job.config(jobName, jobConfigXml);
+};
