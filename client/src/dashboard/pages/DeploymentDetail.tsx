@@ -21,30 +21,40 @@ const statusConfig = {
 };
 
 export const DeploymentDetails: React.FC = () => {
-  const { jobName, buildId } = useParams<{ jobName: string; buildId: string }>();
+  const { jobName, buildId } = useParams<{
+    jobName: string;
+    buildId: string;
+  }>();
+  console.log('jobName:', jobName, 'buildId:', buildId);
   const navigate = useNavigate();
-  const { GetBuildDetails } = useDeployments();
-  
-  const { 
-    data: buildDetailsResponse, 
-    isLoading: isBuildDetailsLoading, 
-    error: buildDetailsError 
+  const { GetBuildDetails, GetDeploymentBuildStatus } = useDeployments();
+
+  const {
+    data: buildDetailsResponse,
+    isLoading: isBuildDetailsLoading,
+    error: buildDetailsError,
   } = GetBuildDetails(jobName || '', buildId || '');
 
-  if (isBuildDetailsLoading) {
+  const {
+    data: buildStatusResponse,
+    isLoading: isBuildStatusLoading,
+    error: buildStatusError,
+  } = GetDeploymentBuildStatus(jobName || '');
+
+  if (isBuildDetailsLoading || isBuildStatusLoading) {
     return <LoadingSkeleton />;
   }
 
-  if (buildDetailsError) {
+  if (buildDetailsError || buildStatusError) {
     return (
-      <ErrorDisplay 
-        error={buildDetailsError} 
+      <ErrorDisplay
+        error={buildDetailsError}
         onBack={() => navigate('/deployments')}
       />
     );
   }
 
-  if (!buildDetailsResponse?.data) {
+  if (!buildDetailsResponse?.data || !buildStatusResponse) {
     return (
       <div className='container mx-auto px-2 py-8 space-y-8'>
         <h1 className='text-3xl font-bold'>Deployment Not Found</h1>
@@ -57,6 +67,7 @@ export const DeploymentDetails: React.FC = () => {
   }
 
   const details = buildDetailsResponse.data;
+  const buildStatus = buildStatusResponse;
 
   // Dummy data for missing fields
   const dummyStatus = {
@@ -77,8 +88,17 @@ export const DeploymentDetails: React.FC = () => {
           <CardTitle className='flex items-center justify-between'>
             <span>{details.fullDisplayName}</span>
             <Badge
-              className={statusConfig[details.result as keyof typeof statusConfig]?.className}
-              variant={details.result === 'SUCCESS' ? 'default' : details.result === 'FAILURE' ? 'destructive' : 'secondary'}
+              className={
+                statusConfig[details.result as keyof typeof statusConfig]
+                  ?.className
+              }
+              variant={
+                details.result === 'SUCCESS'
+                  ? 'default'
+                  : details.result === 'FAILURE'
+                  ? 'destructive'
+                  : 'secondary'
+              }
             >
               {details.result}
             </Badge>
@@ -105,12 +125,17 @@ export const DeploymentDetails: React.FC = () => {
             <div className='flex items-center space-x-2'>
               <div
                 className={`p-2 rounded-full ${
-                  statusConfig[details.result as keyof typeof statusConfig]?.className
+                  statusConfig[details.result as keyof typeof statusConfig]
+                    ?.className
                 }`}
               >
-                {React.createElement(statusConfig[details.result as keyof typeof statusConfig]?.icon, {
-                  size: 20,
-                })}
+                {React.createElement(
+                  statusConfig[details.result as keyof typeof statusConfig]
+                    ?.icon,
+                  {
+                    size: 20,
+                  }
+                )}
               </div>
               <span>{details.result}</span>
             </div>
@@ -140,10 +165,25 @@ export const DeploymentDetails: React.FC = () => {
           <Card>
             <CardContent className='p-4'>
               <p>
-                Build Number: {details.number}<br />
-                Result: {details.result}<br />
-                Duration: {details.duration / 1000} seconds<br />
-                URL: <a href={details.url} target="_blank" rel="noopener noreferrer">{details.url}</a>
+                Build Number: {details.number}
+                <br />
+                Result: {details.result}
+                <br />
+                Duration: {details.duration / 1000} seconds
+                <br />
+              </p>
+              <h3 className='text-lg font-semibold mt-6'>Build Status</h3>
+              <p>
+                Deployment Name: {buildStatus.status}
+                <br />
+                URL:
+                <a
+                  href={buildStatus.apiUrl}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  {buildStatus.apiUrl}
+                </a>
               </p>
             </CardContent>
           </Card>
@@ -152,8 +192,6 @@ export const DeploymentDetails: React.FC = () => {
     </div>
   );
 };
-
-// ... rest of the component (LoadingSkeleton and ErrorDisplay) remains the same
 
 const LoadingSkeleton: React.FC = () => (
   <div className='container mx-auto px-2 py-8 space-y-8'>

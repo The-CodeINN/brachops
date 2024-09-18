@@ -24,11 +24,15 @@ function App() {
           <Route path='/deploy' element={<CreateDeploymentOrScanJob />} />
           <Route path='/codescan' element={<CreateDeploymentOrScanJob />} />
           <Route path='/deployments' element={<Deployments />} />
+
           <Route
             path='/deployment/:name'
             element={<DeploymentDetailsTable />}
           />
-          <Route path='/deployment/:name/:id' element={<DeploymentDetails />} />
+          <Route
+            path='/deployment/:jobName/:buildId'
+            element={<DeploymentDetails />}
+          />
         </Route>
 
         {/* Catch all routes */}

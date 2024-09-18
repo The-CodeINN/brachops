@@ -42,7 +42,6 @@ const DeploymentDetailsTable = () => {
     if (name) {
       const encodedJobName = encodeURIComponent(name);
       navigate(`/deployment/${encodedJobName}/${buildId}`);
-      console.log('Navigating to:', `/deployment/${encodedJobName}/${buildId}`);
     }
   };
 

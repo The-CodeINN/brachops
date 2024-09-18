@@ -41,16 +41,22 @@ class DeploymentService {
     );
   }
 
-  static async getDeploymentBuildStatus(jobName: string): Promise<AxiosResponse<GetDeploymentBuildStatusResponse>> {
+  static async getDeploymentBuildStatus(
+    jobName: string
+  ): Promise<AxiosResponse<GetDeploymentBuildStatusResponse>> {
     return axios.get<GetDeploymentBuildStatusResponse>(
       `${baseUrl}/jenkins/deployment-status/${jobName}`
-    )
+    );
   }
 
-  static async getBuildDetails(jobName: string, buildId: string): Promise<AxiosResponse<GetBuildDetailsResponse>> {
+  static async getBuildDetails(
+    jobName: string,
+    buildId: string
+  ): Promise<AxiosResponse<GetBuildDetailsResponse>> {
+    const encodedJobName = encodeURIComponent(jobName);
     return axios.get<GetBuildDetailsResponse>(
-      `${baseUrl}/jenkins/job/${encodeURIComponent(jobName)}/build/${buildId}`
-    )
+      `${baseUrl}/jenkins/job/${encodedJobName}/build/${buildId}`
+    );
   }
 }
 

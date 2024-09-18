@@ -117,8 +117,6 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                 <SelectContent>
                   <SelectItem value='DotNetCore'>.NET Core</SelectItem>
                   <SelectItem value='NodeJs'>Node.js</SelectItem>
-                  <SelectItem value='DotNetCore'>.NET Core</SelectItem>
-                  <SelectItem value='NodeJs'>Node.js</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage>{getFieldError('projectType')}</FormMessage>
@@ -219,6 +217,9 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
           </Button>
         </div>
         <FormMessage>{errors.envVars?.message}</FormMessage>
+        {serverErrors?.general && (
+          <div className='text-red-500 text-sm'>{serverErrors.general}</div>
+        )}
         <Button
           type='submit'
           className='bg-primary hover:bg-primary/90 text-primary-foreground'
