@@ -59,6 +59,7 @@ export const routes = (app: Application) => {
   ); // http://localhost:3000/jenkins/job/MyJob/build/1/log or http://localhost:3000/jenkins/job/MyJob/build/1/log?start=0&type=text&meta=true or http://localhost:3000/jenkins/job/MyJob/build/1/log?start=0&type=html&meta=true
 
   // Stream build log
+
   app.get(
     "/jenkins/job/:jobName/build/:buildNumber/log/stream",
     validateResource(streamBuildLogSchema),
