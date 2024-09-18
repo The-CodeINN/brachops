@@ -11,11 +11,9 @@ import {
   type CreateScanJobInput,
 } from "$/schema";
 import { createSuccessResponse } from "$/utils/apiResponse";
-import path, { resolve } from "path";
+import path from "path";
 import fs from "fs";
 import { spawn } from "child_process";
-import * as logService from "$/service/jenkinsLogService";
-import { Socket } from "socket.io";
 
 interface JobInfo {
   name: string;
@@ -432,44 +430,4 @@ export const handleSonarQubeWebhook = async (req: Request, res: Response) => {
     log.error(`Error handling SonarQube webhook: ${error}`);
     res.status(500).send("Error handling SonarQube webhook");
   }
-};
-
-export const setupJenkinsLogSocket = (socket: Socket) => {
-  socket.on("subscribe_log", async (data: { jobName: string; buildNumber: number }) => {
-    const { jobName, buildNumber } = data;
-    log.info(`Client subscribed to log for job ${jobName}, build ${buildNumber}`);
-
-    try {
-      const streamOptions: logService.StreamOptions = {
-        name: jobName,
-        number: buildNumber,
-        type: "text",
-        delay: 1000,
-      };
-
-      const logStream = await logService.getBuildLogStream(streamOptions);
-
-      logStream.on("data", (chunk) => {
-        socket.emit("log_update", { jobName, buildNumber, log: chunk.toString() });
-      });
-
-      logStream.on("end", () => {
-        socket.emit("log_end", { jobName, buildNumber });
-      });
-
-      logStream.on("error", (error) => {
-        console.log("I am the error", error);
-        log.error(`Error streaming log for ${jobName} #${buildNumber}: ${error}`);
-        socket.emit("log_error", { jobName, buildNumber, error: error.message });
-      });
-
-      socket.on("unsubscribe_log", () => {
-        logStream.destroy();
-        log.info(`Client unsubscribed from log for job ${jobName}, build ${buildNumber}`);
-      });
-    } catch (error) {
-      log.error(`Failed to setup log stream for ${jobName} #${buildNumber}: ${error}`);
-      socket.emit("log_error", { jobName, buildNumber, error: "Failed to setup log stream" });
-    }
-  });
 };

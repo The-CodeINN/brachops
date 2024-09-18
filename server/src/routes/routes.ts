@@ -12,7 +12,6 @@ import {
   createScanJobSchema,
 } from "$/schema";
 import rateLimit from "express-rate-limit";
-import { jenkins } from "$/utils/jenkinsClient";
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
