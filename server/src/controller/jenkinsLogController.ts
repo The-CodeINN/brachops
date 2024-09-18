@@ -1,9 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import * as logService from "$/service/jenkinsLogService";
 import { log } from "$/utils/logger";
-import { GetBuildStatusInput, type GetBuildLogInput, type StreamBuildLogInput } from "$/schema";
-import { customJenkinsClient } from "$/utils/jenkinsClient";
-import { createSuccessResponse } from "$/utils/apiResponse";
+import { type GetBuildLogInput, type StreamBuildLogInput } from "$/schema";
 
 export const getBuildLogHandler = async (
   req: Request<GetBuildLogInput["params"], object, object, GetBuildLogInput["query"]>,
@@ -48,19 +46,30 @@ export const streamBuildLogHandler = async (
     };
 
     const logStream = await logService.getBuildLogStream(streamOptions); // Await the stream
+    console.log("Log stream initialized");
 
     res.setHeader("Content-Type", "text/plain");
     res.setHeader("Transfer-Encoding", "chunked");
 
+    const timeout = setTimeout(() => {
+      res.status(504).end("Log streaming timed out");
+      logStream.destroy(); // Clean up the stream
+    }, 10000); // 10 seconds timeout
+
     logStream.on("data", (chunk) => {
+      clearTimeout(timeout); // If data is received, clear the timeout
+      console.log("Received data chunk: ", chunk.toString());
       res.write(chunk);
     });
 
     logStream.on("end", () => {
+      clearTimeout(timeout); // Ensure timeout is cleared when the stream ends
+      console.log("Log stream ended.");
       res.end();
     });
 
     logStream.on("error", (error) => {
+      console.error("Error in log stream:", error);
       log.error(error);
       res.status(500).end("Error occurred while streaming log");
     });
@@ -69,28 +78,10 @@ export const streamBuildLogHandler = async (
     next(error);
   }
 };
-
-export const getBuildStageHandler = async (
-  req: Request<GetBuildStatusInput["params"]>,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { jobName, buildNumber } = req.params;
-
-    const pipelineRunDetails = await customJenkinsClient.getPipelineRunDetails(
-      jobName,
-      buildNumber
-    );
-    res.setHeader("Content-Type", "application/json");
-    res.setHeader("Transfer-Encoding", "chunked");
-
-    // Stream the pipeline run details
-    res.write(JSON.stringify(pipelineRunDetails));
-    res.end();
-  } catch (error) {
-    console.error("Failed to fetch pipeline run details:", error);
-    res.status(500).end("Error occurred while fetching pipeline run details");
-    next(error);
-  }
-};
+export function getBuildStageHandler(
+  arg0: string,
+  arg1: (req: Request, res: Response, next: NextFunction) => void,
+  getBuildStageHandler: any
+) {
+  throw new Error("Function not implemented.");
+}

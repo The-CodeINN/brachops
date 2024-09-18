@@ -38,7 +38,7 @@ const ScanCodePipeline = (
                 withSonarQubeEnv('sonarqube') {
                     sh '''
                     export PATH="$PATH:$HOME/.dotnet/tools"
-                    dotnet sonarscanner begin /k:"${jobName}" /n:"brachops"
+                    dotnet sonarscanner begin /k:"${jobName}" /n:"BrachOps-${jobName}"
                     '''
                 }
             }
@@ -65,7 +65,7 @@ const ScanCodePipeline = (
         stage('File System Scan') {
             steps {
                 script {
-                    def rootFolder = sh(script: "dirname ${buildPath}", returnStdout: true).trim()
+                    def rootFolder = sh(script: "dirname \${PROJECT_PATH}", returnStdout: true).trim()
                     sh "trivy fs --format table -o trivy-fs-report.html \${rootFolder}"
                 }
             }
@@ -112,7 +112,7 @@ const ScanCodePipeline = (
                 export PATH="$PATH:$HOME/.nvm"
                 sonar-scanner \\
                 -Dsonar.projectKey="${jobName}" \\
-                -Dsonar.projectName="brachops" \\
+                -Dsonar.projectName="BrachOps-${jobName}" \\
                 -Dsonar.sources=.
                 '''
             }
@@ -147,6 +147,18 @@ pipeline {
 
   stages {
     ${projectSpecificPipeline}
+    }
+
+  post {
+    success {
+        echo 'Pipeline completed successfully.'
+    }
+    failure {
+        echo 'Pipeline failed.'
+    }
+    always {
+        cleanWs() // Clean up workspace after build
+        }
     }
 }
   `.trim();

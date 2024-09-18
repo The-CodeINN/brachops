@@ -1,10 +1,10 @@
 import React, { useState, ReactNode, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Rocket, Search } from 'lucide-react';
+import { Rocket, Radar } from 'lucide-react';
 
 const tabs = [
   { title: 'Deployment', icon: <Rocket className='h-5 w-5' /> },
-  { title: 'CodeScan', icon: <Search className='h-5 w-5' /> },
+  { title: 'CodeScan', icon: <Radar className='h-5 w-5' /> },
 ];
 
 const buttonVariants = {

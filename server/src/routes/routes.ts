@@ -1,4 +1,5 @@
-import { type Application } from "express";
+import { type Application, Request, Response } from "express";
+import { Server } from "socket.io";
 import * as jenkinsController from "$/controller/jenkinsController";
 import * as jenkinsLogController from "$/controller/jenkinsLogController";
 import { validateResource } from "$/middlewares/validateResource";
@@ -10,6 +11,7 @@ import {
   streamBuildLogSchema,
   createScanJobSchema,
 } from "$/schema";
+import { jenkins } from "$/utils/jenkinsClient";
 
 export const routes = (app: Application) => {
   // Health check
@@ -31,6 +33,9 @@ export const routes = (app: Application) => {
     validateResource(getBuildStatusSchema),
     jenkinsController.getBuildStatusHandler
   ); // http://localhost:3000/jenkins/job/MyJob/build/1
+
+  // Get deployment status
+  app.get("/jenkins/deployment-status/:jobName", jenkinsController.getDeploymentStatus); // http://localhost:3000/jenkins/deployment-status/MyJob
 
   // Create a Jenkins job and trigger it
   app.post(
@@ -79,9 +84,11 @@ export const routes = (app: Application) => {
   // Get job with builds
   app.get("/jenkins/jobsWithBuilds", jenkinsController.getJobWithBuildsHandler); // http://localhost:3000/jenkins/jobsWithBuilds
 
-  app.get(
-    "/jenkins/pipelines/:jobName/runs/:buildNumber/nodes",
-    validateResource(getBuildStatusSchema),
-    jenkinsLogController.getBuildStageHandler
-  ); //http://localhost:3000/jenkins/pipelines/:jobName/runs/:buildNumber/nodes
+  // app.get(
+  //   "/jenkins/pipelines/:jobName/runs/:buildNumber/nodes",
+  //   validateResource(getBuildStatusSchema),
+  //   jenkinsLogController.getBuildStageHandler
+  // ); //http://localhost:3000/jenkins/pipelines/:jobName/runs/:buildNumber/nodes
+
+  app.post("/sonarqube", jenkinsController.handleSonarQubeWebhook); // http://localhost:3000/sonarqube
 };

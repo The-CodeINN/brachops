@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { MountainIcon } from '@/assets/icons/mountainIcon';
-import SidebarButton from '../global/sidebar-button';
+import SidebarButton from './sidebar-button';
 import { SidebarItems } from '@/types';
 import { X } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarItems, className }) => {
 
       {/* Sidebar */}
       <aside
-        className={`w-64 bg-background fixed top-0 left-0 z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 h-full ${
+        className={`w-64 bg-background fixed top-0 left-0 z-50 transform transition-colors duration-200 ease-in-out lg:translate-x-0 h-full ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:relative lg:transform-none ${className}`}
       >

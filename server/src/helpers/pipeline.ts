@@ -1,3 +1,5 @@
+import { getRandomPort } from "./getRandomPort";
+
 const escapeXML = (str: string): string => {
   return str
     .replace(/&/g, "&amp;")
@@ -14,7 +16,8 @@ const sanitizeName = (name: string): string => {
 const generatePipeline = (
   imageName: string,
   projectType: "DotNetCore" | "NodeJs",
-  envVars: Record<string, string>
+  envVars: Record<string, string>,
+  jobName: string
 ): string => {
   // Construct the environment variables section for Kubernetes YAML
   let envYaml = "";
@@ -28,6 +31,8 @@ const generatePipeline = (
   }
 
   const sanitizedProjectType = sanitizeName(projectType);
+  const randomPort = getRandomPort();
+  const namespace = sanitizeName(jobName);
 
   // Dynamically generate the deployment.yaml content
   // TODO: Change sanitizedprojecttype-app to jobname-app the job name is the one added by user
@@ -36,6 +41,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ${sanitizedProjectType}-app
+  namespace: ${namespace}
 spec:
   replicas: 1
   selector:
@@ -60,6 +66,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ${sanitizedProjectType}-service
+  namespace: ${namespace}
 spec:
   selector:
     app: ${sanitizedProjectType}-app
@@ -68,7 +75,7 @@ spec:
       protocol: TCP
       port: 8080
       targetPort: 8080
-      nodePort: 30000
+      nodePort: ${randomPort}
   type: NodePort
 `;
 
@@ -124,6 +131,8 @@ spec:
             sh '''
               set -e
               ${envVarsScript}
+              echo 'Creating namespace ${namespace}'
+              kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true create namespace ${namespace} || true
               echo 'Generating dynamic deployment.yaml for Kubernetes'
               cat << EOF > deployment.yaml
 ${deploymentYaml}
@@ -139,19 +148,27 @@ EOF
                 cat service.yaml
 
               echo 'Deploying ${imageName} to Minikube'
-              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f deployment.yaml
-              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f service.yaml
-              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true wait --for=condition=ready pod -l app=${sanitizedProjectType}-app --timeout=120s
+              kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true apply -f deployment.yaml
+              kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true apply -f service.yaml
+              kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true wait --for=condition=ready pod -l app=${sanitizedProjectType}-app --timeout=120s -n ${namespace}
               echo 'Deployment completed successfully'
-              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 
-            '''
+
+              # Construct the localhost URL
+              APP_URL="http://localhost:7080"
+              echo "Application URL: $APP_URL"
+              
+              # Save the URL to a temporary file
+              echo "$APP_URL" > /tmp/${namespace}_url.txt
+
+              kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 -n ${namespace}
+              '''
           } catch (Exception e) {
             echo 'Deployment failed: ' + e.message
             sh '''
               echo 'Describing deployment:'
-              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true describe deployment ${sanitizedProjectType}-app
+              kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true describe deployment ${sanitizedProjectType}-app -n ${namespace}
               echo 'Fetching logs:'
-              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true logs deployment/${sanitizedProjectType}-app
+              kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true logs deployment/${sanitizedProjectType}-app -n ${namespace}
             '''
             throw e
           }
@@ -188,11 +205,24 @@ pipeline {
   agent any
   environment {
     IMAGE_NAME = "${escapedImageName}"
+    MINIKUBE_URL = 'http://127.0.0.1:35881'
     KUBECONFIG = '/home/jenkins/.kube/config'
   }
   stages {
     ${commonPipelineStages}
     ${projectSpecificPipeline}
+  }
+  post {
+    always {
+      script {
+        withCredentials([string(credentialsId: 'my_kubernetes', variable: 'api_token')]) {
+          sh '''
+            echo 'Deleting namespace ${namespace}'
+            kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true delete namespace ${namespace} || true
+          '''
+        }
+      }
+    }
   }
 }
   `.trim();

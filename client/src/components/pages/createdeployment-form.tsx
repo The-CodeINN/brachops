@@ -1,5 +1,5 @@
 import React from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
@@ -23,7 +23,9 @@ import { Plus, Minus } from 'lucide-react';
 
 const deploymentFormSchema = z.object({
   jobName: z.string().min(1, 'Job name is required'),
-  projectType: z.enum(['.NET Core', 'Node.js']),
+  projectType: z.enum(['DotNetCore', 'NodeJs'], {
+    required_error: 'Project type is required',
+  }),
   imageName: z.string().min(1, 'Image name is required'),
   envVars: z
     .array(
@@ -39,20 +41,20 @@ export type DeploymentFormValues = z.infer<typeof deploymentFormSchema>;
 
 interface DeploymentFormProps {
   onSubmit: (data: DeploymentFormValues) => void;
-  errors?: Record<string, string>;
+  serverErrors?: Record<string, string>;
   isLoading: boolean;
 }
 
 const DeploymentForm: React.FC<DeploymentFormProps> = ({
   onSubmit,
-  errors,
+  serverErrors,
   isLoading,
 }) => {
   const form = useForm<DeploymentFormValues>({
     resolver: zodResolver(deploymentFormSchema),
     defaultValues: {
       jobName: '',
-      projectType: '.NET Core',
+      projectType: undefined,
       imageName: '',
       envVars: [{ key: '', value: '' }],
     },
@@ -63,6 +65,17 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
     name: 'envVars',
   });
 
+  const {
+    formState: { errors },
+  } = form;
+
+  const getFieldError = (fieldName: string) => {
+    return (
+      errors[fieldName as keyof FieldErrors<DeploymentFormValues>]?.message ||
+      serverErrors?.[fieldName]
+    );
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
@@ -71,11 +84,17 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
           name='jobName'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Job Name</FormLabel>
+              <FormLabel className='text-foreground'>Job Name</FormLabel>
               <FormControl>
-                <Input placeholder='Enter job name' {...field} />
+                <Input
+                  placeholder='Enter job name'
+                  {...field}
+                  className={
+                    getFieldError('jobName') ? 'border-destructive' : ''
+                  }
+                />
               </FormControl>
-              <FormMessage>{errors?.jobName}</FormMessage>
+              <FormMessage>{getFieldError('jobName')}</FormMessage>
             </FormItem>
           )}
         />
@@ -84,19 +103,23 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
           name='projectType'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Project Type</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormLabel className='text-foreground'>Project Type</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger
+                    className={
+                      getFieldError('projectType') ? 'border-destructive' : ''
+                    }
+                  >
                     <SelectValue placeholder='Select a project type' />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value='.NET Core'>.NET Core</SelectItem>
-                  <SelectItem value='Node.js'>Node.js</SelectItem>
+                  <SelectItem value='DotNetCore'>.NET Core</SelectItem>
+                  <SelectItem value='NodeJs'>Node.js</SelectItem>
                 </SelectContent>
               </Select>
-              <FormMessage>{errors?.projectType}</FormMessage>
+              <FormMessage>{getFieldError('projectType')}</FormMessage>
             </FormItem>
           )}
         />
@@ -105,16 +128,24 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
           name='imageName'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Image Name</FormLabel>
+              <FormLabel className='text-foreground'>Image Name</FormLabel>
               <FormControl>
-                <Input placeholder='Enter image name' {...field} />
+                <Input
+                  placeholder='Enter image name'
+                  {...field}
+                  className={
+                    getFieldError('imageName') ? 'border-destructive' : ''
+                  }
+                />
               </FormControl>
-              <FormMessage>{errors?.imageName}</FormMessage>
+              <FormMessage>{getFieldError('imageName')}</FormMessage>
             </FormItem>
           )}
         />
         <div>
-          <FormLabel>Environment Variables</FormLabel>
+          <FormLabel className='text-foreground'>
+            Environment Variables
+          </FormLabel>
           {fields.map((field, index) => (
             <div key={field.id} className='flex items-center space-x-2 mt-2'>
               <FormField
@@ -123,10 +154,18 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                 render={({ field }) => (
                   <FormItem className='flex-1'>
                     <FormControl>
-                      <Input placeholder='Key' {...field} />
+                      <Input
+                        placeholder='Key'
+                        {...field}
+                        className={
+                          errors.envVars?.[index]?.key
+                            ? 'border-destructive'
+                            : ''
+                        }
+                      />
                     </FormControl>
                     <FormMessage>
-                      {errors?.[`envVars.${index}.key`]}
+                      {errors.envVars?.[index]?.key?.message}
                     </FormMessage>
                   </FormItem>
                 )}
@@ -137,10 +176,18 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                 render={({ field }) => (
                   <FormItem className='flex-1'>
                     <FormControl>
-                      <Input placeholder='Value' {...field} />
+                      <Input
+                        placeholder='Value'
+                        {...field}
+                        className={
+                          errors.envVars?.[index]?.value
+                            ? 'border-destructive'
+                            : ''
+                        }
+                      />
                     </FormControl>
                     <FormMessage>
-                      {errors?.[`envVars.${index}.value`]}
+                      {errors.envVars?.[index]?.value?.message}
                     </FormMessage>
                   </FormItem>
                 )}
@@ -169,6 +216,10 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
             Add Environment Variable
           </Button>
         </div>
+        <FormMessage>{errors.envVars?.message}</FormMessage>
+        {serverErrors?.general && (
+          <div className='text-red-500 text-sm'>{serverErrors.general}</div>
+        )}
         <Button
           type='submit'
           className='bg-primary hover:bg-primary/90 text-primary-foreground'
