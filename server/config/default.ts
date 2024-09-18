@@ -19,7 +19,7 @@ interface Config {
 
 const config: Config = {
   port: parseInt(process.env.PORT || "3000", 10),
-  clientUrl: process.env.CLIENT_URL || "http://localhost:3000",
+  clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
   jenkins: {
     jenkinsUrl: process.env.JENKINS_URL || "localhost:8080",
     jenkinsUserName: process.env.JENKINS_USERNAME || "",

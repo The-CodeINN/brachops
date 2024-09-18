@@ -7,6 +7,7 @@ import { Check, X, Clock, Server, Github, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDeployments } from '@/queriesAndMutations';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLogStream } from '@/lib/useLogStream';
 
 const statusConfig = {
   SUCCESS: {
@@ -27,6 +28,12 @@ export const DeploymentDetails: React.FC = () => {
   }>();
   const navigate = useNavigate();
   const { GetBuildDetails, GetDeploymentBuildStatus } = useDeployments();
+
+  const {
+    logs,
+    isConnected,
+    error: logStreamError,
+  } = useLogStream(jobName || '', buildId || '');
 
   const {
     data: buildDetailsResponse,
@@ -128,13 +135,14 @@ export const DeploymentDetails: React.FC = () => {
                     ?.className
                 }`}
               >
-                {React.createElement(
+                {/* {React.createElement(
                   statusConfig[details.result as keyof typeof statusConfig]
                     ?.icon,
                   {
                     size: 20,
                   }
-                )}
+                )} */}
+                hiii
               </div>
               <span>{details.result}</span>
             </div>
@@ -150,13 +158,22 @@ export const DeploymentDetails: React.FC = () => {
         <TabsContent value='logs'>
           <Card>
             <CardContent className='p-4'>
-              <pre className='bg-muted p-4 rounded-md overflow-x-auto'>
-                {dummyStatus.logs.map((log: string, index: number) => (
-                  <div key={index} className='font-mono text-sm'>
-                    {log}
-                  </div>
-                ))}
-              </pre>
+              {logStreamError ? (
+                <p className='text-red-500'>{logStreamError}</p>
+              ) : (
+                <>
+                  <p className='mb-2'>
+                    {isConnected ? 'Connected to log stream' : 'Connecting...'}
+                  </p>
+                  <pre className='bg-muted p-4 rounded-md overflow-x-auto h-96 overflow-y-auto'>
+                    {logs.map((log, index) => (
+                      <div key={index} className='font-mono text-sm'>
+                        {log}
+                      </div>
+                    ))}
+                  </pre>
+                </>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
