@@ -90,6 +90,7 @@ const CreateDeploymentOrScanJob: React.FC = () => {
   const onCodeQualityScanSubmit = (formData: CodeQualityScanFormValues) => {
     const createScanJobInput: CreateScanJobInput = {
       jobName: formData.jobName,
+      projectType: formData.projectType,
       gitUrl: formData.gitUrl,
       buildPath: formData.buildPath,
     };

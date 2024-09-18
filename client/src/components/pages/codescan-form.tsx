@@ -5,16 +5,27 @@ import * as z from 'zod';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 const codeQualityScanFormSchema = z.object({
   jobName: z.string().min(1, 'Job name is required'),
+  projectType: z.enum(['DotNetCore', 'NodeJs'], {
+    required_error: 'Project type is required',
+  }),
   gitUrl: z.string().url('Invalid Git URL'),
   buildPath: z.string().min(1, 'Build path is required'),
 });
@@ -38,6 +49,7 @@ const CodeQualityScanForm: React.FC<CodeQualityScanFormProps> = ({
     resolver: zodResolver(codeQualityScanFormSchema),
     defaultValues: {
       jobName: '',
+      projectType: undefined,
       gitUrl: '',
       buildPath: '',
     },
@@ -71,6 +83,31 @@ const CodeQualityScanForm: React.FC<CodeQualityScanFormProps> = ({
                 />
               </FormControl>
               <FormMessage>{getFieldError('jobName')}</FormMessage>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='projectType'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className='text-foreground'>Project Type</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger
+                    className={
+                      getFieldError('projectType') ? 'border-destructive' : ''
+                    }
+                  >
+                    <SelectValue placeholder='Select a project type' />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value='DotNetCore'>.NET Core</SelectItem>
+                  <SelectItem value='NodeJs'>Node.js</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage>{getFieldError('projectType')}</FormMessage>
             </FormItem>
           )}
         />
@@ -110,6 +147,10 @@ const CodeQualityScanForm: React.FC<CodeQualityScanFormProps> = ({
                 />
               </FormControl>
               <FormMessage>{getFieldError('buildPath')}</FormMessage>
+              <FormDescription>
+                Enter the path to the .NET build file (.csproj) or package.json
+                for Node.js
+              </FormDescription>
             </FormItem>
           )}
         />

@@ -28,7 +28,7 @@ export interface DeploymentResponse {
 
 export interface GetDeploymentBuildStatusResponse {
   status: string;
-  appUrl: string
+  appUrl: string;
 }
 
 export interface JobWithBuildsResponse {
@@ -59,6 +59,7 @@ export interface CreateJobInput {
 
 export interface CreateScanJobInput {
   jobName: string;
+  projectType: 'DotNetCore' | 'NodeJs';
   gitUrl: string;
   buildPath: string;
 }
