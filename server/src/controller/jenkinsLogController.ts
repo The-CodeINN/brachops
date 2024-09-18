@@ -3,7 +3,6 @@ import * as logService from "$/service/jenkinsLogService";
 import { log } from "$/utils/logger";
 import { type GetBuildLogInput, type StreamBuildLogInput } from "$/schema";
 
-
 export const getBuildLogHandler = async (
   req: Request<GetBuildLogInput["params"], object, object, GetBuildLogInput["query"]>,
   res: Response,
@@ -52,22 +51,22 @@ export const streamBuildLogHandler = async (
     res.setHeader("Content-Type", "text/plain");
     res.setHeader("Transfer-Encoding", "chunked");
 
-const timeout = setTimeout(() => {
-  res.status(504).end("Log streaming timed out");
-  logStream.destroy();  // Clean up the stream
-}, 10000);  // 10 seconds timeout
+    const timeout = setTimeout(() => {
+      res.status(504).end("Log streaming timed out");
+      logStream.destroy(); // Clean up the stream
+    }, 10000); // 10 seconds timeout
 
-logStream.on("data", (chunk) => {
-  clearTimeout(timeout);  // If data is received, clear the timeout
-  console.log("Received data chunk: ", chunk.toString());
-  res.write(chunk);
-});
+    logStream.on("data", (chunk) => {
+      clearTimeout(timeout); // If data is received, clear the timeout
+      console.log("Received data chunk: ", chunk.toString());
+      res.write(chunk);
+    });
 
-logStream.on("end", () => {
-  clearTimeout(timeout);  // Ensure timeout is cleared when the stream ends
-  console.log("Log stream ended.");
-  res.end();
-});
+    logStream.on("end", () => {
+      clearTimeout(timeout); // Ensure timeout is cleared when the stream ends
+      console.log("Log stream ended.");
+      res.end();
+    });
 
     logStream.on("error", (error) => {
       console.error("Error in log stream:", error);
@@ -79,3 +78,10 @@ logStream.on("end", () => {
     next(error);
   }
 };
+export function getBuildStageHandler(
+  arg0: string,
+  arg1: (req: Request, res: Response, next: NextFunction) => void,
+  getBuildStageHandler: any
+) {
+  throw new Error("Function not implemented.");
+}

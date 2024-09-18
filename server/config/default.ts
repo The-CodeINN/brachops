@@ -12,6 +12,8 @@ interface Config {
     jenkinsCustomUrl: string;
     jenkinsUserToken: string | undefined;
   };
+  SONARQUBE_URL: string;
+  SONARQUBE_API_TOKEN: string;
 }
 
 const config: Config = {
@@ -24,6 +26,8 @@ const config: Config = {
     jenkinsUserToken: process.env.JENKINS_USER_TOKEN,
   },
   MINIKUBE_URL: process.env.MINIKUBE_URL || "",
+  SONARQUBE_URL: process.env.SONARQUBE_URL || "",
+  SONARQUBE_API_TOKEN: process.env.SONARQUBE_API_TOKEN || "",
 };
 
 export default config;

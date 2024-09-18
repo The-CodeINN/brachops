@@ -69,6 +69,32 @@ class NewJenkinsClient {
       throw new Error("Failed to fetch Jenkins job info");
     }
   }
+
+  /**
+   * Get details of a pipeline run.
+   * @param jobName - The name of the Jenkins job.
+   * @param runId - The ID of the pipeline run.
+   * @returns A promise that resolves to the pipeline run details.
+   */
+  public async getPipelineRunDetails(jobName: string, runId: string): Promise<any> {
+    try {
+      const url = `${this.baseUrl}/blue/rest/organizations/jenkins/pipelines/${jobName}/runs/${runId}/nodes/`;
+
+      const requestConfig: AxiosRequestConfig = {
+        method: "get",
+        url,
+        headers: {
+          Authorization: this.authHeader,
+        },
+      };
+
+      const response = await axios(requestConfig);
+      return response.data;
+    } catch (error) {
+      console.error("Failed to fetch pipeline run details:", error);
+      throw new Error("Failed to fetch Jenkins pipeline run details");
+    }
+  }
 }
 
 export { NewJenkinsClient };

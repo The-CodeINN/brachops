@@ -1,4 +1,4 @@
-import { jenkins } from "$/utils/jenkinsClient";
+import { customJenkinsClient, jenkins } from "$/utils/jenkinsClient";
 import { type Readable } from "stream";
 
 export interface LogOptions {
@@ -25,4 +25,8 @@ export const getBuildLogStream = async (options: StreamOptions): Promise<Readabl
   const { name, number, type, delay } = options;
   const stream = await jenkins.build.logStream(name, number, type, delay);
   return stream as Readable;
+};
+
+export const getBuildStage = async (jobName: string, runId: string): Promise<Readable> => {
+  return await customJenkinsClient.getPipelineRunDetails(jobName, runId);
 };
