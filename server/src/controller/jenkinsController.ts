@@ -288,7 +288,7 @@ export const createScanJobHandler = async (
     await jenkinsService.createScanJob(jobName, xml);
 
     // Trigger the build
-    const buildResult = await jenkinsService.triggerJob(jobName);
+    await jenkinsService.triggerJob(jobName);
 
     // Return success response
     res

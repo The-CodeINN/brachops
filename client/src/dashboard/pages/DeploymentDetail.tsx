@@ -25,7 +25,6 @@ export const DeploymentDetails: React.FC = () => {
     jobName: string;
     buildId: string;
   }>();
-  console.log('jobName:', jobName, 'buildId:', buildId);
   const navigate = useNavigate();
   const { GetBuildDetails, GetDeploymentBuildStatus } = useDeployments();
 
@@ -143,7 +142,7 @@ export const DeploymentDetails: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue='logs'>
+      <Tabs defaultValue='summary'>
         <TabsList>
           <TabsTrigger value='summary'>Summary</TabsTrigger>
           <TabsTrigger value='logs'>Deployment Logs</TabsTrigger>

@@ -6,17 +6,26 @@ import {
   GetDeploymentBuildStatusResponse,
   GetBuildDetailsResponse,
 } from '@/types';
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 export const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
+const axiosConfig = axios.create({
+  baseURL: baseUrl,
+});
+
+axiosConfig.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  config.headers.set('ngrok-skip-browser-warning', 'true');
+  return config;
+});
+
 class DeploymentService {
   static async getDeployments(): Promise<AxiosResponse<DeploymentResponse>> {
-    return axios.get<DeploymentResponse>(`${baseUrl}/jenkins/info`);
+    return axiosConfig.get<DeploymentResponse>(`${baseUrl}/jenkins/info`);
   }
 
   static getJobsWithBuilds(): Promise<AxiosResponse<JobWithBuildsResponse>> {
-    return axios.get<JobWithBuildsResponse>(
+    return axiosConfig.get<JobWithBuildsResponse>(
       `${baseUrl}/jenkins/jobsWithBuilds`
     );
   }
@@ -24,19 +33,22 @@ class DeploymentService {
   static async createDeployment(
     data: CreateJobInput
   ): Promise<AxiosResponse<DeploymentResponse>> {
-    return axios.post<DeploymentResponse>(`${baseUrl}/jenkins/job`, data);
+    return axiosConfig.post<DeploymentResponse>(`${baseUrl}/jenkins/job`, data);
   }
 
   static async createScanDeployment(
     data: CreateScanJobInput
   ): Promise<AxiosResponse<DeploymentResponse>> {
-    return axios.post<DeploymentResponse>(`${baseUrl}/jenkins/scan`, data);
+    return axiosConfig.post<DeploymentResponse>(
+      `${baseUrl}/jenkins/scan`,
+      data
+    );
   }
 
   static async deleteJob(
     jobName: string
   ): Promise<AxiosResponse<DeploymentResponse>> {
-    return axios.delete<DeploymentResponse>(
+    return axiosConfig.delete<DeploymentResponse>(
       `${baseUrl}/jenkins/job/${jobName}`
     );
   }
@@ -44,7 +56,7 @@ class DeploymentService {
   static async getDeploymentBuildStatus(
     jobName: string
   ): Promise<AxiosResponse<GetDeploymentBuildStatusResponse>> {
-    return axios.get<GetDeploymentBuildStatusResponse>(
+    return axiosConfig.get<GetDeploymentBuildStatusResponse>(
       `${baseUrl}/jenkins/deployment-status/${jobName}`
     );
   }
@@ -54,7 +66,7 @@ class DeploymentService {
     buildId: string
   ): Promise<AxiosResponse<GetBuildDetailsResponse>> {
     const encodedJobName = encodeURIComponent(jobName);
-    return axios.get<GetBuildDetailsResponse>(
+    return axiosConfig.get<GetBuildDetailsResponse>(
       `${baseUrl}/jenkins/job/${encodedJobName}/build/${buildId}`
     );
   }

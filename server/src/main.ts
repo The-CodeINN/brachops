@@ -1,6 +1,4 @@
 import express, { type Application } from "express";
-import { Server as webSocketServer } from "ws";
-import { createServer } from "http";
 import config from "config";
 import cors from "cors";
 import helmet from "helmet";
@@ -8,7 +6,6 @@ import { log } from "./utils/logger";
 import { routes } from "./routes/routes";
 import { notFoundMiddleware } from "./middlewares/notFoundMiddleware";
 import { errorMiddleware } from "./middlewares/errorMiddleware";
-import { NewJenkinsClient } from "./custom/customJenkinClients";
 
 const app: Application = express();
 
