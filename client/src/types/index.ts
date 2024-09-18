@@ -26,6 +26,11 @@ export interface DeploymentResponse {
   status: string;
 }
 
+export interface GetDeploymentBuildStatusResponse {
+  status: string;
+  apiUrl: string
+}
+
 export interface JobWithBuildsResponse {
   status: string;
   data: {
@@ -69,4 +74,18 @@ export interface BackendErrorResponse {
   errors: {
     details: BackendError[];
   };
+}
+
+export interface GetBuildDetailsResponse {
+  status: string;
+  data: GetBuildDetailsData;
+  message: string;
+}
+
+interface GetBuildDetailsData {
+  fullDisplayName: string;
+  number: number;
+  result: string;
+  url: string;
+  duration: number;
 }
