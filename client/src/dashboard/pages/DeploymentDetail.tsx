@@ -145,8 +145,8 @@ export const DeploymentDetails: React.FC = () => {
 
       <Tabs defaultValue='logs'>
         <TabsList>
-          <TabsTrigger value='logs'>Deployment Logs</TabsTrigger>
           <TabsTrigger value='summary'>Summary</TabsTrigger>
+          <TabsTrigger value='logs'>Deployment Logs</TabsTrigger>
         </TabsList>
         <TabsContent value='logs'>
           <Card>
@@ -178,11 +178,11 @@ export const DeploymentDetails: React.FC = () => {
                 <br />
                 URL:
                 <a
-                  href={buildStatus.apiUrl}
+                  href={buildStatus.appUrl}
                   target='_blank'
                   rel='noopener noreferrer'
                 >
-                  {buildStatus.apiUrl}
+                  {buildStatus.appUrl}
                 </a>
               </p>
             </CardContent>

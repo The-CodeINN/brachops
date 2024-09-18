@@ -28,7 +28,7 @@ export interface DeploymentResponse {
 
 export interface GetDeploymentBuildStatusResponse {
   status: string;
-  apiUrl: string
+  appUrl: string
 }
 
 export interface JobWithBuildsResponse {
