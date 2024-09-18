@@ -48,7 +48,7 @@ spec:
       - name: ${sanitizedProjectType}-container
         image: ${imageName}
         ports:
-        - containerPort: 80
+        - containerPort: 8080
         env: ${envYaml}
   `;
 
@@ -150,7 +150,13 @@ EOF
               # Save the URL to a temporary file
               echo "$APP_URL" > /tmp/${namespace}_url.txt
 
-              kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 -n ${namespace}
+              echo "Starting port forwarding"
+              export JENKINS_NODE_COOKIE=dontKillMe
+              # Run port forwarding in the background
+              bash -c "kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 -n ${namespace} > /tmp/${namespace}_port_forward.log 2>&1 & disown"
+
+              # Store the process ID
+              echo $! > /tmp/${namespace}_port_forward.pid
               '''
           } catch (Exception e) {
             echo 'Deployment failed: ' + e.message
@@ -169,17 +175,54 @@ EOF
 `.trim();
 
 const nodeJsPipeline = `
-stage('Run Node.js Container') {
+stage('Deploy Node.js Web App To Kubernetes') {
   steps {
-    withCredentials([ string(credentialsId: 'my_kubernetes', variable: 'api_token') ]) {
+    withCredentials([string(credentialsId: 'my_kubernetes', variable: 'api_token')]) {
       script {
-        withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+        try {
           sh '''
+            set -e
             ${envVarsScript}
-            docker run -d -p 8082:3000 -e NODE_ENV=production \${IMAGE_NAME}
-            tail -f /dev/null
-            docker ps
+            echo 'Creating namespace ${namespace}'
+            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true create namespace ${namespace} || true
+            echo 'Generating dynamic deployment.yaml for Kubernetes'
+            cat << EOF > deployment.yaml
+${deploymentYaml}
+EOF
+            echo 'Deployment YAML:'
+            cat deployment.yaml
+
+              echo 'Generating dynamic service.yaml for Kubernetes'
+              cat << EOF > service.yaml
+${serviceYaml}
+EOF
+              echo 'Service YAML:'
+              cat service.yaml
+
+            echo 'Deploying ${imageName} to Minikube'
+            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f deployment.yaml
+            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f service.yaml
+            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true wait --for=condition=ready pod -l app=${sanitizedProjectType}-app --timeout=120s -n ${namespace}
+            echo 'Deployment completed successfully'
+
+            # Construct the localhost URL
+            APP_URL="http://localhost:7080"
+            echo "Application URL: $APP_URL"
+            
+            # Save the URL to a temporary file
+            echo "$APP_URL" > /tmp/${namespace}_url.txt
+
+            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 -n ${namespace}
+            '''
+        } catch (Exception e) {
+          echo 'Deployment failed: ' + e.message
+          sh '''
+            echo 'Describing deployment:'
+            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true describe deployment ${sanitizedProjectType}-app -n ${namespace}
+            echo 'Fetching logs:'
+            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true logs deployment/${sanitizedProjectType}-app -n ${namespace}
           '''
+          throw e
         }
       }
     }
@@ -199,18 +242,6 @@ pipeline {
   stages {
     ${commonPipelineStages}
     ${projectSpecificPipeline}
-  }
-  post {
-    always {
-      script {
-        withCredentials([string(credentialsId: 'my_kubernetes', variable: 'api_token')]) {
-          sh '''
-            echo 'Deleting namespace ${namespace}'
-            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true delete namespace ${namespace} || true
-          '''
-        }
-      }
-    }
   }
 }
   `.trim();
