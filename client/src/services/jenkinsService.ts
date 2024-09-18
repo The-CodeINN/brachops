@@ -3,6 +3,8 @@ import {
   JobWithBuildsResponse,
   CreateJobInput,
   CreateScanJobInput,
+  GetDeploymentBuildStatusResponse,
+  GetBuildDetailsResponse,
 } from '@/types';
 import axios, { AxiosResponse } from 'axios';
 
@@ -36,6 +38,24 @@ class DeploymentService {
   ): Promise<AxiosResponse<DeploymentResponse>> {
     return axios.delete<DeploymentResponse>(
       `${baseUrl}/jenkins/job/${jobName}`
+    );
+  }
+
+  static async getDeploymentBuildStatus(
+    jobName: string
+  ): Promise<AxiosResponse<GetDeploymentBuildStatusResponse>> {
+    return axios.get<GetDeploymentBuildStatusResponse>(
+      `${baseUrl}/jenkins/deployment-status/${jobName}`
+    );
+  }
+
+  static async getBuildDetails(
+    jobName: string,
+    buildId: string
+  ): Promise<AxiosResponse<GetBuildDetailsResponse>> {
+    const encodedJobName = encodeURIComponent(jobName);
+    return axios.get<GetBuildDetailsResponse>(
+      `${baseUrl}/jenkins/job/${encodedJobName}/build/${buildId}`
     );
   }
 }

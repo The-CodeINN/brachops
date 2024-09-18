@@ -79,12 +79,43 @@ const useDeployments = () => {
       },
     });
 
+  const GetDeploymentBuildStatus = (jobName: string) => {
+    return useQuery({
+      queryKey: ['deploymentStatus', jobName],
+      queryFn: async () => {
+        const response = await DeploymentService.getDeploymentBuildStatus(
+          jobName
+        );
+        return response.data;
+      },
+    });
+  };
+
+  const GetBuildDetails = (jobName: string, buildId: string) => {
+    return useQuery({
+      queryKey: ['buildDetails', jobName, buildId],
+      queryFn: async () => {
+        if (!jobName || !buildId) {
+          throw new Error('Job name or build ID is missing');
+        }
+        const response = await DeploymentService.getBuildDetails(
+          jobName,
+          buildId
+        );
+        return response.data;
+      },
+      enabled: !!jobName && !!buildId,
+    });
+  };
+
   return {
     GetJenkinsInfo,
     GetJobsWithBuilds,
     CreateDeployment,
     CreateScanDeployment,
     DeleteJob,
+    GetDeploymentBuildStatus,
+    GetBuildDetails,
   };
 };
 

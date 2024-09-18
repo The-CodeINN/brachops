@@ -62,7 +62,7 @@ export const DeploymentList: React.FC<DeploymentListProps> = ({
     ABORTED: {
       icon: Clock,
       className: 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900',
-      label: 'Aborted',
+      label: 'In Progress',
     },
   };
 
