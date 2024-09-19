@@ -122,7 +122,7 @@ spec:
 
     stage('Docker Image Scan') {
       steps {
-        sh "trivy image --format table -o trivy-image-report.html \${IMAGE_NAME}"
+        sh "trivy image --format table -o ${jobName}.html \${IMAGE_NAME}"
       }
     }
 
