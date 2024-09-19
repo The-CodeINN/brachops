@@ -56,7 +56,7 @@ spec:
       - name: ${sanitizedProjectType}-container
         image: ${imageName}
         ports:
-        - containerPort: 8080
+        - containerPort: 80
         env: ${envYaml}
   `;
 
