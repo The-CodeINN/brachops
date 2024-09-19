@@ -12,7 +12,6 @@ import {
   createScanJobSchema,
 } from "$/schema";
 import rateLimit from "express-rate-limit";
-import { jenkins } from "$/utils/jenkinsClient";
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -59,6 +58,7 @@ export const routes = (app: Application) => {
   ); // http://localhost:3000/jenkins/job/MyJob/build/1/log or http://localhost:3000/jenkins/job/MyJob/build/1/log?start=0&type=text&meta=true or http://localhost:3000/jenkins/job/MyJob/build/1/log?start=0&type=html&meta=true
 
   // Stream build log
+
   app.get(
     "/jenkins/job/:jobName/build/:buildNumber/log/stream",
     validateResource(streamBuildLogSchema),

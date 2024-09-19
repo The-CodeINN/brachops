@@ -11,9 +11,7 @@ import {
   type CreateScanJobInput,
 } from "$/schema";
 import { createSuccessResponse } from "$/utils/apiResponse";
-import { pollQueueForBuildNumber } from "$/helpers/pollQueueForBuildNumber";
-import { pollBuildStatus } from "$/helpers/pollBuildStatus";
-import path, { resolve } from "path";
+import path from "path";
 import fs from "fs";
 import { spawn } from "child_process";
 
@@ -288,7 +286,7 @@ export const createScanJobHandler = async (
     await jenkinsService.createScanJob(jobName, xml);
 
     // Trigger the build
-    const buildResult = await jenkinsService.triggerJob(jobName);
+    await jenkinsService.triggerJob(jobName);
 
     // Return success response
     res
