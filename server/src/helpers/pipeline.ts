@@ -191,7 +191,7 @@ stage('Deploy Node.js Web App To Kubernetes') {
             set -e
             ${envVarsScript}
             echo 'Creating namespace ${namespace}'
-            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true create namespace ${namespace} || true
+            kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true create namespace ${namespace} || true
             echo 'Generating dynamic deployment.yaml for Kubernetes'
             cat << EOF > deployment.yaml
 ${deploymentYaml}
@@ -207,9 +207,9 @@ EOFhttp://127.0.0.1:44291
               cat service.yaml
 
             echo 'Deploying ${imageName} to Minikube'
-            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f deployment.yaml
-            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true apply -f service.yaml
-            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true wait --for=condition=ready pod -l app=${sanitizedProjectType}-app --timeout=120s -n ${namespace}
+            kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true apply -f deployment.yaml
+            kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true apply -f service.yaml
+            kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true wait --for=condition=ready pod -l app=${sanitizedProjectType}-app --timeout=120s -n ${namespace}
             echo 'Deployment completed successfully'
 
             # Construct the localhost URL
@@ -219,15 +219,15 @@ EOFhttp://127.0.0.1:44291
             # Save the URL to a temporary file
             echo "$APP_URL" > /tmp/${namespace}_url.txt
 
-            kubectl --token $api_token --server  --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 -n ${namespace}
+            kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 -n ${namespace}
             '''
         } catch (Exception e) {
           echo 'Deployment failed: ' + e.message
           sh '''
             echo 'Describing deployment:'
-            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true describe deployment ${sanitizedProjectType}-app -n ${namespace}
+            kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true describe deployment ${sanitizedProjectType}-app -n ${namespace}
             echo 'Fetching logs:'
-            kubectl --token $api_token --server http://127.0.0.1:44291 --insecure-skip-tls-verify=true logs deployment/${sanitizedProjectType}-app -n ${namespace}
+            kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true logs deployment/${sanitizedProjectType}-app -n ${namespace}
           '''
           throw e
         }
@@ -245,7 +245,7 @@ pipeline {
   agent any
   environment {
     IMAGE_NAME = "${escapedImageName}"
-    MINIKUBE_URL = 'http://127.0.0.1:34535'
+    MINIKUBE_URL = 'http://127.0.0.1:44291'
     KUBECONFIG = '/home/jenkins/.kube/config'
   }
   stages {
