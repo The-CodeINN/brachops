@@ -35,7 +35,7 @@ const ScanCodePipeline = (
 
         stage('SonarQube Begin Analysis') {
             steps {
-                withSonarQubeEnv('sonarqube') {
+                withSonarQubeEnv('SonarQube') {
                     sh '''
                     export PATH="$PATH:$HOME/.dotnet/tools"
                     dotnet sonarscanner begin /k:"${jobName}" /n:"BrachOps-${jobName}"
@@ -53,7 +53,7 @@ const ScanCodePipeline = (
 
         stage('SonarQube End Analysis') {
             steps {
-                withSonarQubeEnv('sonarqube') {
+                withSonarQubeEnv('SonarQube') {
                     sh '''
                         export PATH="$PATH:$HOME/.dotnet/tools"
                         dotnet sonarscanner end
@@ -106,7 +106,7 @@ const ScanCodePipeline = (
 
     stage('SonarQube Begin Analysis') {
         steps {
-            withSonarQubeEnv('sonarqube') {
+            withSonarQubeEnv('SonarQube') {
                 echo 'Running SonarQube Analysis...'
                 sh '''
                 export PATH="$PATH:$HOME/.nvm"
