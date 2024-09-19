@@ -164,6 +164,9 @@ EOF
               export JENKINS_NODE_COOKIE=dontKillMe
               # Run port forwarding in the background
               bash -c "kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 -n ${namespace} > /tmp/${namespace}_port_forward.log 2>&1 & disown"
+              
+              # Store the process ID
+              echo $! > /tmp/${namespace}_port_forward.pid
               '''
           } catch (Exception e) {
             echo 'Deployment failed: ' + e.message
@@ -219,7 +222,13 @@ EOFhttp://127.0.0.1:44291
             # Save the URL to a temporary file
             echo "$APP_URL" > /tmp/${namespace}_url.txt
 
-            kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 -n ${namespace}
+            echo "Starting port forwarding"
+            export JENKINS_NODE_COOKIE=dontKillMe
+            # Run port forwarding in the background
+            bash -c "kubectl --token $api_token --server \${MINIKUBE_URL} --insecure-skip-tls-verify=true port-forward service/${sanitizedProjectType}-service 7080:8080 -n ${namespace} > /tmp/${namespace}_port_forward.log 2>&1 & disown"
+          
+            # Store the process ID
+            echo $! > /tmp/${namespace}_port_forward.pid
             '''
         } catch (Exception e) {
           echo 'Deployment failed: ' + e.message
