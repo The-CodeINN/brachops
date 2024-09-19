@@ -14,7 +14,7 @@ const app: Application = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: config.get<string>("clientUrl"), // Make sure to add this to your config
+    origin: config.get<string>("clientUrl"),
     methods: ["GET", "POST"],
   },
 });
