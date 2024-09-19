@@ -205,7 +205,6 @@ EOF
               echo 'Generating dynamic service.yaml for Kubernetes'
               cat << EOF > service.yaml
 ${serviceYaml}
-EOFhttp://127.0.0.1:44291
               echo 'Service YAML:'
               cat service.yaml
 
