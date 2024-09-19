@@ -13,11 +13,17 @@ const statusConfig = {
   SUCCESS: {
     icon: Check,
     className: "text-green-500 bg-green-100 dark:bg-green-900",
+    label: "Success",
   },
-  FAILURE: { icon: X, className: "text-red-500 bg-red-100 dark:bg-red-900" },
+  FAILURE: {
+    icon: X,
+    className: "text-red-500 bg-red-100 dark:bg-red-900",
+    label: "Failure",
+  },
   IN_PROGRESS: {
     icon: Clock,
     className: "text-yellow-500 bg-yellow-100 dark:bg-yellow-900",
+    label: "In Progress",
   },
 };
 
@@ -54,7 +60,7 @@ export const DeploymentDetails: React.FC = () => {
   if (buildDetailsError || buildStatusError) {
     return (
       <ErrorDisplay
-        error={buildDetailsError}
+        error={buildDetailsError || buildStatusError}
         onBack={() => navigate("/deployments")}
       />
     );
@@ -77,13 +83,21 @@ export const DeploymentDetails: React.FC = () => {
 
   // Dummy data for missing fields
   const dummyStatus = {
-    result: details.result,
+    result: details.result || "IN_PROGRESS",
     timestamp: new Date().toISOString(),
     builtOn: "Jenkins Server 1",
     commitHash: "abc123",
     author: "John Doe",
     logs: ["Log entry 1", "Log entry 2", "Log entry 3"],
   };
+
+  const getStatusConfig = (result: string | null) => {
+    if (result === "SUCCESS") return statusConfig.SUCCESS;
+    if (result === "FAILURE") return statusConfig.FAILURE;
+    return statusConfig.IN_PROGRESS;
+  };
+
+  const status = getStatusConfig(dummyStatus.result);
 
   return (
     <div className="container mx-auto px-2 py-8 space-y-8">
@@ -92,21 +106,12 @@ export const DeploymentDetails: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>{details.fullDisplayName}</span>
-            <Badge
-              className={
-                statusConfig[details.result as keyof typeof statusConfig]
-                  ?.className
-              }
-              variant={
-                details.result === "SUCCESS"
-                  ? "default"
-                  : details.result === "FAILURE"
-                  ? "destructive"
-                  : "secondary"
-              }
-            >
-              {details.result}
+            <span>
+              {details.fullDisplayName || `Job: ${jobName}, Build: ${buildId}`}
+            </span>
+            <Badge className={status.className}>
+              <status.icon className="mr-2 h-4 w-4" />
+              {status.label}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -129,21 +134,10 @@ export const DeploymentDetails: React.FC = () => {
               <span>{dummyStatus.author}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div
-                className={`p-2 rounded-full ${
-                  statusConfig[details.result as keyof typeof statusConfig]
-                    ?.className
-                }`}
-              >
-                {React.createElement(
-                  statusConfig[details.result as keyof typeof statusConfig]
-                    ?.icon,
-                  {
-                    size: 20,
-                  }
-                )}
+              <div className={`p-2 rounded-full ${status.className}`}>
+                <status.icon size={20} />
               </div>
-              <span>{details.result}</span>
+              <span>{status.label}</span>
             </div>
           </div>
         </CardContent>
@@ -165,11 +159,17 @@ export const DeploymentDetails: React.FC = () => {
                     {isConnected ? "Connected to log stream" : "Connecting..."}
                   </p>
                   <pre className="bg-muted p-4 rounded-md overflow-x-auto h-96 overflow-y-auto">
-                    {logs.map((log, index) => (
-                      <div key={index} className="font-mono text-sm">
-                        {log}
-                      </div>
-                    ))}
+                    {logs.length > 0
+                      ? logs.map((log, index) => (
+                          <div key={index} className="font-mono text-sm">
+                            {log}
+                          </div>
+                        ))
+                      : dummyStatus.logs.map((log, index) => (
+                          <div key={index} className="font-mono text-sm">
+                            {log}
+                          </div>
+                        ))}
                   </pre>
                 </>
               )}
@@ -180,11 +180,14 @@ export const DeploymentDetails: React.FC = () => {
           <Card>
             <CardContent className="p-4">
               <p>
-                Build Number: {details.number}
+                Build Number: {details.number || buildId}
                 <br />
-                Result: {details.result}
+                Result: {status.label}
                 <br />
-                Duration: {details.duration / 1000} seconds
+                Duration:{" "}
+                {details.duration
+                  ? `${details.duration / 1000} seconds`
+                  : "N/A"}
                 <br />
               </p>
               <h3 className="text-lg font-semibold mt-6">Build Status</h3>

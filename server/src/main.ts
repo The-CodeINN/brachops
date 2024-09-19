@@ -17,6 +17,10 @@ const io = new Server(httpServer, {
     origin: config.get<string>("clientUrl"),
     methods: ["GET", "POST"],
   },
+  allowRequest: (req, callback) => {
+    const noSniff = req.headers["ngrok-skip-browser-warning"];
+    callback(null, noSniff === "true");
+  },
 });
 
 app.use(helmet());

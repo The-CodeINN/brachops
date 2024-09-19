@@ -3,7 +3,6 @@ import io from "socket.io-client";
 import { baseUrl } from "@/services/jenkinsService";
 
 const SOCKET_SERVER_URL = baseUrl;
-//const SOCKET_SERVER_URL = "https://fe36-197-210-85-246.ngrok-free.app";
 
 export const useLogStream = (jobName: string, buildNumber: string) => {
   const [logs, setLogs] = useState<string[]>([]);
@@ -11,7 +10,11 @@ export const useLogStream = (jobName: string, buildNumber: string) => {
   const [error, setError] = useState<string | null>(null);
 
   const connectToSocket = useCallback(() => {
-    const socket = io(SOCKET_SERVER_URL);
+    const socket = io(SOCKET_SERVER_URL, {
+      extraHeaders: {
+        "ngrok-skip-browser-warning": "true",
+      },
+    });
 
     socket.on("connect", () => {
       setIsConnected(true);
