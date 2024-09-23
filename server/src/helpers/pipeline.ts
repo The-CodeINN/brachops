@@ -56,7 +56,7 @@ spec:
       - name: ${sanitizedProjectType}-container
         image: ${imageName}
         ports:
-        - containerPort: 8080
+        - containerPort: 80
         env: ${envYaml}
   `;
 
@@ -117,6 +117,12 @@ spec:
             }
           }
         }
+      }
+    }
+
+    stage('Docker Image Scan') {
+      steps {
+        sh "trivy image --format table -o ${jobName}.html \${IMAGE_NAME}"
       }
     }
 
@@ -253,7 +259,7 @@ pipeline {
   agent any
   environment {
     IMAGE_NAME = "${escapedImageName}"
-    MINIKUBE_URL = 'http://127.0.0.1:44291'
+    MINIKUBE_URL = 'http://127.0.0.1:42083'
     KUBECONFIG = '/home/jenkins/.kube/config'
   }
   stages {

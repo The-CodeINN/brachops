@@ -14,7 +14,6 @@ import { createSuccessResponse } from "$/utils/apiResponse";
 import path from "path";
 import fs from "fs";
 import { spawn } from "child_process";
-import { Server } from "socket.io";
 
 interface JobInfo {
   name: string;
@@ -393,13 +392,6 @@ export const getJobWithBuildsHandler = async (req: Request, res: Response, next:
   }
 };
 
-let io: Server;
-
-// Function to initialize Socket.IO (call this when setting up your server)
-export const initializeSocketIO = (socketIoServer: Server) => {
-  io = socketIoServer;
-};
-
 export const handleSonarQubeWebhook = async (req: Request, res: Response) => {
   try {
     const payload = req.body;
@@ -418,8 +410,6 @@ export const handleSonarQubeWebhook = async (req: Request, res: Response) => {
       analysedAt,
       qualityGate: { conditions, status: sonarGateStatus },
     } = payload;
-
-    //io.sockets.emit('sonarAnalysisUrl', { sonarAnalysisUrl });
 
     // Logging the details
     console.log(`Task ID: ${taskId}`);
