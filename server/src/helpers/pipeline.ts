@@ -120,6 +120,12 @@ spec:
       }
     }
 
+    stage('Docker Image Scan') {
+      steps {
+        sh "trivy image --format table -o ${jobName}.html \${IMAGE_NAME}"
+      }
+    }
+
 `.trim();
 
   const dotNetCorePipeline = `
@@ -253,7 +259,7 @@ pipeline {
   agent any
   environment {
     IMAGE_NAME = "${escapedImageName}"
-    MINIKUBE_URL = 'http://127.0.0.1:44291'
+    MINIKUBE_URL = 'http://127.0.0.1:34931'
     KUBECONFIG = '/home/jenkins/.kube/config'
   }
   stages {
