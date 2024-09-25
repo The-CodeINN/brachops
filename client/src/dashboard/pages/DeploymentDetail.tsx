@@ -33,7 +33,14 @@ export const DeploymentDetails: React.FC = () => {
     buildId: string;
   }>();
   const navigate = useNavigate();
-  const { GetBuildDetails, GetDeploymentBuildStatus } = useDeployments();
+  const { GetBuildDetails, GetDeploymentBuildStatus, GetSonarAnalysis } =
+    useDeployments();
+
+  const {
+    data: sonarAnalysisResponse,
+    isLoading: isSonarAnalysisLoading,
+    error: sonarAnalysisError,
+  } = GetSonarAnalysis();
 
   const {
     logs,
@@ -53,20 +60,24 @@ export const DeploymentDetails: React.FC = () => {
     error: buildStatusError,
   } = GetDeploymentBuildStatus(jobName || "");
 
-  if (isBuildDetailsLoading || isBuildStatusLoading) {
+  if (isBuildDetailsLoading || isBuildStatusLoading || isSonarAnalysisLoading) {
     return <LoadingSkeleton />;
   }
 
-  if (buildDetailsError || buildStatusError) {
+  if (buildDetailsError || buildStatusError || sonarAnalysisError) {
     return (
       <ErrorDisplay
-        error={buildDetailsError || buildStatusError}
+        error={buildDetailsError || buildStatusError || sonarAnalysisError}
         onBack={() => navigate("/deployments")}
       />
     );
   }
 
-  if (!buildDetailsResponse?.data || !buildStatusResponse) {
+  if (
+    !buildDetailsResponse?.data ||
+    !buildStatusResponse ||
+    !sonarAnalysisResponse
+  ) {
     return (
       <div className="container mx-auto px-2 py-8 space-y-8">
         <h1 className="text-3xl font-bold">Deployment Not Found</h1>
@@ -80,6 +91,7 @@ export const DeploymentDetails: React.FC = () => {
 
   const details = buildDetailsResponse.data;
   const buildStatus = buildStatusResponse;
+  const sonarAnalysis = sonarAnalysisResponse.data;
 
   // Dummy data for missing fields
   const dummyStatus = {
@@ -201,6 +213,19 @@ export const DeploymentDetails: React.FC = () => {
                   rel="noopener noreferrer"
                 >
                   {buildStatus.appUrl}
+                </a>
+              </p>
+              <h3 className="text-lg font-semibold mt-6">Sonar Analysis</h3>
+              <p>
+                Status: {sonarAnalysis.status}
+                <br />
+                URL:
+                <a
+                  href={sonarAnalysis.sonarAnalysisUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {sonarAnalysis.sonarAnalysisUrl}
                 </a>
               </p>
             </CardContent>

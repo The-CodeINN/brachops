@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon } from "lucide-react";
 
 export interface SidebarItems {
   links: Array<{
@@ -53,13 +53,13 @@ export interface Build {
 export interface CreateJobInput {
   jobName: string;
   imageName: string;
-  projectType: 'DotNetCore' | 'NodeJs';
+  projectType: "DotNetCore" | "NodeJs";
   envVars: Record<string, string>;
 }
 
 export interface CreateScanJobInput {
   jobName: string;
-  projectType: 'DotNetCore' | 'NodeJs';
+  projectType: "DotNetCore" | "NodeJs";
   gitUrl: string;
   buildPath: string;
 }
@@ -89,4 +89,20 @@ interface GetBuildDetailsData {
   result: string;
   url: string;
   duration: number;
+}
+
+export interface GetSonarAnalysisResponse {
+  status: string;
+  data: GetSonarAnalysisData;
+  message: string;
+}
+
+interface GetSonarAnalysisData {
+  taskId: string;
+  status: string;
+  projectKey: string;
+  projectName: string;
+  sonarAnalysisUrl: string;
+  isMain: boolean;
+  analysedAt: string;
 }
