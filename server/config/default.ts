@@ -15,6 +15,7 @@ interface Config {
   };
   SONARQUBE_URL: string;
   SONARQUBE_API_TOKEN: string;
+  NGROK_URL: string;
 }
 
 const config: Config = {
@@ -30,6 +31,7 @@ const config: Config = {
   MINIKUBE_URL: process.env.MINIKUBE_URL || "",
   SONARQUBE_URL: process.env.SONARQUBE_URL || "",
   SONARQUBE_API_TOKEN: process.env.SONARQUBE_API_TOKEN || "",
+  NGROK_URL: process.env.NGROK_URL || "",
 };
 
 export default config;

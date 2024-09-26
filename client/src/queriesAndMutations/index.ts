@@ -1,18 +1,18 @@
-import { DeploymentService } from '@/services/jenkinsService';
-import { CreateJobInput, CreateScanJobInput } from '@/types';
+import { DeploymentService } from "@/services/jenkinsService";
+import { CreateJobInput, CreateScanJobInput } from "@/types";
 import {
   InvalidateQueryFilters,
   useMutation,
   useQuery,
   useQueryClient,
-} from '@tanstack/react-query';
+} from "@tanstack/react-query";
 
 const useDeployments = () => {
   const queryClient = useQueryClient();
 
   const GetJenkinsInfo = () =>
     useQuery({
-      queryKey: ['jenkins'],
+      queryKey: ["jenkins"],
       queryFn: async () => {
         const response = await DeploymentService.getDeployments();
         return response.data;
@@ -21,7 +21,7 @@ const useDeployments = () => {
 
   const GetJobsWithBuilds = () =>
     useQuery({
-      queryKey: ['jobsWithBuilds'],
+      queryKey: ["jobsWithBuilds"],
       queryFn: async () => {
         const response = await DeploymentService.getJobsWithBuilds();
         return response.data;
@@ -36,12 +36,12 @@ const useDeployments = () => {
       },
       onSuccess: () => {
         const queryKey: InvalidateQueryFilters = {
-          queryKey: ['jobsWithBuilds'],
+          queryKey: ["jobsWithBuilds"],
         };
         queryClient.invalidateQueries(queryKey);
       },
       onError: (error) => {
-        console.error('Deployment creation failed:', error);
+        console.error("Deployment creation failed:", error);
       },
     });
 
@@ -53,12 +53,12 @@ const useDeployments = () => {
       },
       onSuccess: () => {
         const queryKey: InvalidateQueryFilters = {
-          queryKey: ['jobsWithBuilds'],
+          queryKey: ["jobsWithBuilds"],
         };
         queryClient.invalidateQueries(queryKey);
       },
       onError: (error) => {
-        console.error('Deployment creation failed:', error);
+        console.error("Deployment creation failed:", error);
       },
     });
 
@@ -70,18 +70,18 @@ const useDeployments = () => {
       },
       onSuccess: () => {
         const queryKey: InvalidateQueryFilters = {
-          queryKey: ['jobsWithBuilds'],
+          queryKey: ["jobsWithBuilds"],
         };
         queryClient.invalidateQueries(queryKey);
       },
       onError: (error) => {
-        console.error('Job deletion failed:', error);
+        console.error("Job deletion failed:", error);
       },
     });
 
   const GetDeploymentBuildStatus = (jobName: string) => {
     return useQuery({
-      queryKey: ['deploymentStatus', jobName],
+      queryKey: ["deploymentStatus", jobName],
       queryFn: async () => {
         const response = await DeploymentService.getDeploymentBuildStatus(
           jobName
@@ -93,10 +93,10 @@ const useDeployments = () => {
 
   const GetBuildDetails = (jobName: string, buildId: string) => {
     return useQuery({
-      queryKey: ['buildDetails', jobName, buildId],
+      queryKey: ["buildDetails", jobName, buildId],
       queryFn: async () => {
         if (!jobName || !buildId) {
-          throw new Error('Job name or build ID is missing');
+          throw new Error("Job name or build ID is missing");
         }
         const response = await DeploymentService.getBuildDetails(
           jobName,
@@ -108,6 +108,16 @@ const useDeployments = () => {
     });
   };
 
+  const GetSonarAnalysis = (projectKey: string) => {
+    return useQuery({
+      queryKey: ["sonarAnalysis"],
+      queryFn: async () => {
+        const response = await DeploymentService.getSonarAnalysis(projectKey);
+        return response.data;
+      },
+    });
+  };
+
   return {
     GetJenkinsInfo,
     GetJobsWithBuilds,
@@ -116,6 +126,7 @@ const useDeployments = () => {
     DeleteJob,
     GetDeploymentBuildStatus,
     GetBuildDetails,
+    GetSonarAnalysis,
   };
 };
 

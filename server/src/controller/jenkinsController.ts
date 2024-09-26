@@ -10,10 +10,12 @@ import {
   type CreateJobInput,
   type CreateScanJobInput,
 } from "$/schema";
-import { createSuccessResponse } from "$/utils/apiResponse";
+import { createErrorResponse, createSuccessResponse } from "$/utils/apiResponse";
 import path from "path";
 import fs from "fs";
 import { spawn } from "child_process";
+import _ from "lodash";
+import config from "config";
 
 interface JobInfo {
   name: string;
@@ -409,6 +411,9 @@ export const getJobWithBuildsHandler = async (req: Request, res: Response, next:
   }
 };
 
+// Store payloads per job/project (in memory for now)
+let sonarQubePayloads: { [key: string]: any } = {}; // projectKey or taskId
+
 export const handleSonarQubeWebhook = async (req: Request, res: Response) => {
   try {
     const payload = req.body;
@@ -417,6 +422,9 @@ export const handleSonarQubeWebhook = async (req: Request, res: Response) => {
       return res.status(400).send("Invalid webhook payload");
     }
     log.info("Received SonarQube webhook");
+
+    // Storing the payload in memory
+    //lastSonarQubePayload = payload;
 
     // Extracting details from the payload object
     const {
@@ -427,6 +435,9 @@ export const handleSonarQubeWebhook = async (req: Request, res: Response) => {
       analysedAt,
       qualityGate: { conditions, status: sonarGateStatus },
     } = payload;
+
+    // Store the payload by the projectKey or taskId
+    sonarQubePayloads[projectKey] = payload;
 
     // Logging the details
     console.log(`Task ID: ${taskId}`);
@@ -446,3 +457,83 @@ export const handleSonarQubeWebhook = async (req: Request, res: Response) => {
     res.status(500).send("Error handling SonarQube webhook");
   }
 };
+
+const ngrokUrl = config.get<string>("NGROK_URL");
+
+export const getSonarQubeAnalysisForJob = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { projectKey } = req.params;
+
+    if (!projectKey) {
+      return res.status(400).send("Project Key is required");
+    }
+
+    const payload = sonarQubePayloads[projectKey];
+
+    if (!payload) {
+      return res.json(createErrorResponse(`No analysis data available for project: ${projectKey}`));
+    }
+
+    const {
+      taskId,
+      status,
+      project: { name: projectName, url: sonarAnalysisUrl },
+      branch: { isMain },
+      analysedAt,
+    } = payload;
+
+    const publicSonarUrl = sonarAnalysisUrl.replace("http://localhost:9000", ngrokUrl);
+
+    res.json(
+      createSuccessResponse(
+        {
+          taskId,
+          status,
+          projectKey,
+          projectName,
+          publicSonarUrl,
+          isMain,
+          analysedAt,
+        },
+        "SonarQube analysis retrieved successfully"
+      )
+    );
+  } catch (error) {
+    log.error(error);
+    next(error);
+  }
+};
+
+// export const getSonarQubeAnalysis = (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     if (!lastSonarQubePayload) {
+//       return res.json(createErrorResponse("No SonarQube analysis found"));
+//     }
+
+//     const {
+//       taskId,
+//       status,
+//       project: { key: projectKey, name: projectName, url: sonarAnalysisUrl },
+//       branch: { isMain },
+//       analysedAt,
+//     } = lastSonarQubePayload;
+
+//     res.json(
+//       createSuccessResponse(
+//         {
+//           taskId,
+//           status,
+//           projectKey,
+//           projectName,
+//           sonarAnalysisUrl,
+//           isMain,
+//           analysedAt,
+//         },
+//         "SonarQube analysis retrieved successfully"
+//       )
+//     );
+//   } catch (error) {
+//     log.error(error);
+//     next(error);
+//   }
+// };

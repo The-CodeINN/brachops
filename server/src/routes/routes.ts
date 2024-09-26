@@ -98,4 +98,7 @@ export const routes = (app: Application) => {
   // ); //http://localhost:3000/jenkins/pipelines/:jobName/runs/:buildNumber/nodes
 
   app.post("/sonarqube", jenkinsController.handleSonarQubeWebhook); // http://localhost:3000/sonarqube
+
+  // GET request to retrieve the latest SonarQube analysis
+  app.get("/sonarqube-analysis/:projectKey", jenkinsController.getSonarQubeAnalysisForJob); // http://localhost:3000/sonarqube-analysis
 };
