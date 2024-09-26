@@ -81,3 +81,10 @@ export const getJobWithBuilds = async (jobName: string) => {
 export const updateJob = async (jobName: string, jobConfigXml: string) => {
   await jenkins.job.config(jobName, jobConfigXml);
 };
+
+export const isK8sJob = async (jobName: string): Promise<boolean> => {
+  // Logic to determine if the job corresponds to a Kubernetes job
+  //  check the job configuration or metadata for a Kubernetes association
+  const jobConfig = await jenkins.job.config(jobName);
+  return jobConfig.includes("<kubernetes-plugin-namespace>");
+};

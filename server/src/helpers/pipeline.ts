@@ -259,7 +259,7 @@ pipeline {
   agent any
   environment {
     IMAGE_NAME = "${escapedImageName}"
-    MINIKUBE_URL = 'http://127.0.0.1:34931'
+    MINIKUBE_URL = 'http://127.0.0.1:37147'
     KUBECONFIG = '/home/jenkins/.kube/config'
   }
   stages {

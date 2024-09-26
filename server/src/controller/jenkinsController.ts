@@ -68,10 +68,10 @@ const sanitizeName = (name: string): string => {
   // Remove non-alphanumeric characters and convert to lowercase
   let sanitized = name.replace(/[^a-zA-Z0-9-]/g, "-").toLowerCase();
 
-  // Remove the 'deploy-' prefix if it exists
-  if (sanitized.startsWith("deploy-")) {
-    sanitized = sanitized.substring(7);
-  }
+  // // Remove the 'deploy-' prefix if it exists
+  // if (sanitized.startsWith("deploy-")) {
+  //   sanitized = sanitized.substring(7);
+  // }
 
   return sanitized;
 };
@@ -329,24 +329,41 @@ export const deleteJobHandler = async (
   res: Response,
   next: NextFunction
 ) => {
+  const { jobName } = req.params;
+
   try {
-    const { jobName } = req.params;
-    const namespace = sanitizeName(jobName); // Remove the deploy- prefix if present
+    const namespace = sanitizeName(jobName);
 
-    // Delete Jenkins job
+    // Check if the job is a K8s job before deleting the Jenkins job
+    const isK8sJob = await jenkinsService.isK8sJob(namespace);
+
+    if (isK8sJob) {
+      try {
+        // If it's a K8s job, delete the associated Kubernetes namespace first
+        await deleteNamespace(namespace);
+        log.info(`Kubernetes namespace ${namespace} deleted successfully.`);
+      } catch (namespaceError) {
+        // If deleting the namespace fails, log the error but proceed with deleting the Jenkins job
+        log.warn(`Failed to delete Kubernetes namespace for job ${namespace}: ${namespaceError}`);
+      }
+    }
+
+    // delete the Jenkins job (whether it's a K8s job or not)
     await deleteJenkinsJob(jobName);
+    log.info(`Jenkins job ${jobName} deleted successfully.`);
 
-    // Delete K8s namespace
-    await deleteNamespace(namespace);
-
+    // Respond with a success message
     res.json(
       createSuccessResponse(
         {},
-        `Job ${jobName} and associated Kubernetes resources deleted successfully`
+        isK8sJob
+          ? `Jenkins job ${jobName} and Kubernetes namespace ${namespace} deleted successfully`
+          : `Jenkins job ${jobName} deleted successfully`
       )
     );
+
   } catch (error) {
-    log.error(error);
+    log.error(`Error deleting job ${jobName}: ${error}`);
     next(error);
   }
 };
