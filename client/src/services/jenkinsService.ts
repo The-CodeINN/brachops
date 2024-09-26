@@ -72,9 +72,11 @@ class DeploymentService {
     );
   }
 
-  static async getSonarAnalysis(): Promise<AxiosResponse<any>> {
+  static async getSonarAnalysis(
+    projectKey: string
+  ): Promise<AxiosResponse<GetSonarAnalysisResponse>> {
     return axiosConfig.get<GetSonarAnalysisResponse>(
-      `${baseUrl}/sonarqube-analysis`
+      `${baseUrl}/sonarqube-analysis/${projectKey}`
     );
   }
 }

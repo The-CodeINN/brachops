@@ -108,11 +108,11 @@ const useDeployments = () => {
     });
   };
 
-  const GetSonarAnalysis = () => {
+  const GetSonarAnalysis = (projectKey: string) => {
     return useQuery({
       queryKey: ["sonarAnalysis"],
       queryFn: async () => {
-        const response = await DeploymentService.getSonarAnalysis();
+        const response = await DeploymentService.getSonarAnalysis(projectKey);
         return response.data;
       },
     });

@@ -454,10 +454,9 @@ export const getSonarQubeAnalysisForJob = (req: Request, res: Response, next: Ne
     const payload = sonarQubePayloads[projectKey];
 
     if (!payload) {
-      return res.status(404).send(`No analysis data available for project: ${projectKey}`);
+      return res.json(createErrorResponse(`No analysis data available for project: ${projectKey}`));
     }
 
-    console.log("ngrokUrl: ", ngrokUrl);
     const {
       taskId,
       status,

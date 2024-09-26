@@ -102,7 +102,7 @@ interface GetSonarAnalysisData {
   status: string;
   projectKey: string;
   projectName: string;
-  sonarAnalysisUrl: string;
+  publicSonarUrl: string;
   isMain: boolean;
   analysedAt: string;
 }
