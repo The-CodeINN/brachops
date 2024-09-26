@@ -15,6 +15,7 @@ import path from "path";
 import fs from "fs";
 import { spawn } from "child_process";
 import _ from "lodash";
+import config from "config";
 
 interface JobInfo {
   name: string;
@@ -393,8 +394,6 @@ export const getJobWithBuildsHandler = async (req: Request, res: Response, next:
   }
 };
 
-//let lastSonarQubePayload: any = null;
-
 // Store payloads per job/project (in memory for now)
 let sonarQubePayloads: { [key: string]: any } = {}; // projectKey or taskId
 
@@ -442,6 +441,8 @@ export const handleSonarQubeWebhook = async (req: Request, res: Response) => {
   }
 };
 
+const ngrokUrl = config.get<string>("NGROK_URL");
+
 export const getSonarQubeAnalysisForJob = (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectKey } = req.params;
@@ -451,12 +452,12 @@ export const getSonarQubeAnalysisForJob = (req: Request, res: Response, next: Ne
     }
 
     const payload = sonarQubePayloads[projectKey];
-    console.log("Payload: ", payload);
 
     if (!payload) {
       return res.status(404).send(`No analysis data available for project: ${projectKey}`);
     }
 
+    console.log("ngrokUrl: ", ngrokUrl);
     const {
       taskId,
       status,
@@ -465,6 +466,8 @@ export const getSonarQubeAnalysisForJob = (req: Request, res: Response, next: Ne
       analysedAt,
     } = payload;
 
+    const publicSonarUrl = sonarAnalysisUrl.replace("http://localhost:9000", ngrokUrl);
+
     res.json(
       createSuccessResponse(
         {
@@ -472,7 +475,7 @@ export const getSonarQubeAnalysisForJob = (req: Request, res: Response, next: Ne
           status,
           projectKey,
           projectName,
-          sonarAnalysisUrl,
+          publicSonarUrl,
           isMain,
           analysedAt,
         },
